@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 - Timo Könnecke <github.com/eLtMosen>
+ * Copyright (C) 2025 - Timo Könnecke <github.com/eLtMosen>
  *
  * All rights reserved.
  *
@@ -144,9 +144,11 @@ Application {
         TextField {
             id: editField
             width: Dims.w(80)
-            anchors.top: dialogHeader.bottom
-            anchors.topMargin: Dims.h(5)
-            anchors.horizontalCenter: parent.horizontalCenter
+            anchors {
+                top: dialogHeader.bottom
+                topMargin: Dims.h(5)
+                horizontalCenter: parent.horizontalCenter
+            }
             //% "Item name"
             previewText: qsTrId("id-item-name")
             text: appState.editText
@@ -158,19 +160,23 @@ Application {
 
         IconButton {
             iconName: "ios-close-circle-outline"
-            anchors.right: parent.horizontalCenter
-            anchors.rightMargin: Dims.w(2)
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: Dims.iconButtonMargin
+            anchors {
+                right: parent.horizontalCenter
+                rightMargin: Dims.w(2)
+                bottom: parent.bottom
+                bottomMargin: Dims.iconButtonMargin
+            }
             onClicked: appState.dialogOpen = false
         }
 
         IconButton {
             iconName: appState.editIndex >= 0 ? "ios-checkmark-circle-outline" : "ios-add-circle-outline"
-            anchors.left: parent.horizontalCenter
-            anchors.leftMargin: Dims.w(2)
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: Dims.iconButtonMargin
+            anchors {
+                left: parent.horizontalCenter
+                leftMargin: Dims.w(2)
+                bottom: parent.bottom
+                bottomMargin: Dims.iconButtonMargin
+            }
             onClicked: {
                 var trimmed = editField.text.trim()
                 if (trimmed.length === 0) {
@@ -190,9 +196,11 @@ Application {
 
     ListView {
         id: listView
-        anchors.fill: parent
-        anchors.topMargin: DeviceSpecs.hasRoundScreen ? 30 : 10
-        anchors.leftMargin: DeviceSpecs.hasRoundScreen ? 30 : 10
+        anchors {
+            fill: parent
+            topMargin: DeviceSpecs.hasRoundScreen ? 30 : 10
+            leftMargin: DeviceSpecs.hasRoundScreen ? 30 : 10
+        }
         model: shoppingModel
         clip: true
 
@@ -239,14 +247,14 @@ Application {
                             easing.type: Easing.InOutQuad
                         }
                     }
-                    scale: checked ? 1.0 : 0.8  // Scale up slightly when checked
+                    scale: checked ? 1.0 : 0.8
                 }
 
                 Label {
                     text: name
                     font.pixelSize: 28
                     font.strikeout: checked
-                    color: checked ? "#ACF39D" : "#ffffff"  // Green for checked, white for unchecked
+                    color: checked ? "#ACF39D" : "#ffffff"
                     verticalAlignment: Text.AlignVCenter
                     horizontalAlignment: Text.AlignLeft
                     Layout.fillWidth: true
@@ -267,8 +275,11 @@ Application {
             }
 
             Rectangle {
-                anchors.bottom: parent.bottom
-                width: parent.width
+                anchors {
+                    bottom: parent.bottom
+                    left: parent.left
+                    right: parent.right
+                }
                 height: Dims.l(1)
                 color: "#20ffffff"
             }
@@ -285,17 +296,21 @@ Application {
 
             Icon {
                 name: "ios-add-circle-outline"
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.topMargin: 12
+                anchors {
+                    horizontalCenter: parent.horizontalCenter
+                    top: parent.top
+                    topMargin: 12
+                }
                 width: 48
                 height: 48
             }
 
             MouseArea {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: parent.top
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    top: parent.top
+                }
                 height: parent.height * 0.5
                 onClicked: {
                     appState.editIndex = -1
@@ -305,33 +320,43 @@ Application {
             }
 
             Rectangle {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.verticalCenter: parent.verticalCenter
-                width: parent.width
+                anchors {
+                    horizontalCenter: parent.horizontalCenter
+                    verticalCenter: parent.verticalCenter
+                    left: parent.left
+                    right: parent.right
+                }
                 height: Dims.l(1)
                 color: "#20ffffff"
             }
 
             Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 16
+                anchors {
+                    horizontalCenter: parent.horizontalCenter
+                    bottom: parent.bottom
+                    bottomMargin: 16
+                }
                 text: "Uncheck All"
                 font.pixelSize: 28
                 color: "#ffffff"
             }
 
             MouseArea {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                }
                 height: parent.height * 0.5
                 onClicked: uncheckAll()
             }
 
             Rectangle {
-                anchors.bottom: parent.bottom
-                width: parent.width
+                anchors {
+                    bottom: parent.bottom
+                    left: parent.left
+                    right: parent.right
+                }
                 height: Dims.l(1)
                 color: "#20ffffff"
             }
