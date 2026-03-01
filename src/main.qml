@@ -300,8 +300,14 @@ Application {
             id: dialogHeader
             text: {
                 if (appState.editDialogMode === "list")
-                    return appState.editIndex >= 0 ? "Edit List" : "New List"
-                    return appState.editIndex >= 0 ? "Edit Item" : "Add Item"
+                    //% "Edit List"
+                    return appState.editIndex >= 0 ? qsTrId("id-edit-list") :
+                    //% "New List"
+                    qsTrId("id-new-list")
+                    //% "Edit Item"
+                    return appState.editIndex >= 0 ? qsTrId("id-edit-item") :
+                    //% "Add Item"
+                    qsTrId("id-add-item")
             }
         }
 
@@ -383,7 +389,10 @@ Application {
                     horizontalCenter: parent.horizontalCenter
                     top: parent.top
                 }
-                text: appState.editDialogMode === "list" ? "Delete List" : "Delete Item"
+                //% "Delete List"
+                text: appState.editDialogMode === "list" ? qsTrId("id-delete-list") :
+                //% "Delete Item"
+                qsTrId("id-delete-item")
                 font.pixelSize: Dims.l(8)
                 color: "#ffffff"
             }
@@ -557,7 +566,8 @@ Application {
                     }
 
                     Label {
-                        text: isDefault ? "Default" : name
+                        //% "Default"
+                        text: isDefault ? qsTrId("id-default") : name
                         font.pixelSize: 28
                         color: isDefault ? "#aaaaaa" : "#ffffff"
                         anchors {
@@ -971,7 +981,10 @@ Application {
                     top: footerSep1.bottom
                     topMargin: 22
                 }
-                text: appState.anyChecked ? "Uncheck All" : "Check All"
+                //% "Uncheck All"
+                text: appState.anyChecked ? qsTrId("id-uncheck-all") :
+                //% "Check All"
+                qsTrId("id-check-all")
                 font.pixelSize: 28
                 color: "#ffffff"
             }
