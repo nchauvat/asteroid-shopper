@@ -173,28 +173,26 @@ Application {
             text: appState.editText
         }
 
-        HandWritingKeyboard {
-            anchors.fill: parent
-        }
-
         IconButton {
+            id: cancelButton
             iconName: "ios-close-circle-outline"
             anchors {
+                top: editField.bottom
+                topMargin: Dims.h(3)
                 right: parent.horizontalCenter
                 rightMargin: Dims.w(2)
-                bottom: parent.bottom
-                bottomMargin: Dims.iconButtonMargin
             }
             onClicked: appState.dialogOpen = false
         }
 
         IconButton {
+            id: confirmButton
             iconName: appState.editIndex >= 0 ? "ios-checkmark-circle-outline" : "ios-add-circle-outline"
             anchors {
+                top: editField.bottom
+                topMargin: Dims.h(3)
                 left: parent.horizontalCenter
                 leftMargin: Dims.w(2)
-                bottom: parent.bottom
-                bottomMargin: Dims.iconButtonMargin
             }
             onClicked: {
                 var trimmed = editField.text.trim()
@@ -210,6 +208,70 @@ Application {
                 appState.dialogOpen = false
                 sortList()
             }
+        }
+
+        Item {
+            id: deleteSection
+            visible: appState.editIndex >= 0
+            width: parent.width
+            height: Dims.h(20)
+            anchors {
+                top: cancelButton.bottom
+                topMargin: Dims.h(3)
+                horizontalCenter: parent.horizontalCenter
+            }
+
+            Label {
+                id: deleteLabel
+                anchors {
+                    horizontalCenter: parent.horizontalCenter
+                    top: parent.top
+                }
+                text: "Delete Item"
+                font.pixelSize: 24
+                color: "#ffffff"
+            }
+
+            Icon {
+                id: deleteIcon
+                name: "ios-close-circle-outline"
+                color: "#FF4444"
+                width: 64
+                height: 64
+                anchors {
+                    horizontalCenter: parent.horizontalCenter
+                    top: deleteLabel.bottom
+                    topMargin: Dims.h(1)
+                }
+            }
+
+            MouseArea {
+                anchors.fill: deleteIcon
+                onClicked: {
+                    //% "Deleting item"
+                    deleteRemorseTimer.action = qsTrId("id-deleting-item")
+                    deleteRemorseTimer.start()
+                }
+            }
+        }
+
+        RemorseTimer {
+            id: deleteRemorseTimer
+            duration: 3000
+            gaugeSegmentAmount: 6
+            gaugeStartDegree: -130
+            gaugeEndFromStartDegree: 265
+            //% "Tap to cancel"
+            cancelText: qsTrId("id-tap-to-cancel")
+            onTriggered: {
+                shoppingModel.remove(appState.editIndex)
+                appState.dialogOpen = false
+                sortList()
+            }
+        }
+
+        HandWritingKeyboard {
+            anchors.fill: parent
         }
     }
 
