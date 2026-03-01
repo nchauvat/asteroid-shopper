@@ -120,7 +120,8 @@ Application {
     ListView {
         id: listView
         anchors.fill: parent
-        anchors.topMargin: DeviceInfo.hasRoundScreen ? 30 : 10
+        anchors.topMargin: DeviceSpecs.hasRoundScreen ? 30 : 10
+        anchors.leftMargin: DeviceSpecs.hasRoundScreen ? 30 : 10
         model: shoppingModel
         clip: true
 
@@ -159,7 +160,7 @@ Application {
                     name: checked ? "ios-checkmark-circle-outline" : "ios-circle-outline"
                     Layout.preferredWidth: 48
                     Layout.preferredHeight: 48
-                    Layout.leftMargin: DeviceInfo.hasRoundScreen ? 60 : 10
+                    Layout.leftMargin: DeviceSpecs.hasRoundScreen ? 60 : 10
 
                     Behavior on scale {
                         NumberAnimation {
