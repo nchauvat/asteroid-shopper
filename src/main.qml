@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Timo Könnecke <github.com/eLtMosen>
+ * Copyright (C) 2026 - Timo Könnecke <github.com/eLtMosen>
  *
  * All rights reserved.
  *
@@ -31,6 +31,13 @@ Application {
 
     ListModel {
         id: shoppingModel
+    }
+
+    QtObject {
+        id: appState
+        property bool dialogOpen: false
+        property int editIndex: -1
+        property string editText: ""
     }
 
     Component.onCompleted: {
@@ -117,6 +124,70 @@ Application {
         onTriggered: sortList()
     }
 
+    Item {
+        id: editDialog
+        anchors.fill: parent
+        z: 10
+        visible: appState.dialogOpen
+
+        Rectangle {
+            anchors.fill: parent
+            color: "#090B0C"
+            opacity: 0.95
+        }
+
+        PageHeader {
+            id: dialogHeader
+            text: appState.editIndex >= 0 ? "Edit Item" : "Add Item"
+        }
+
+        TextField {
+            id: editField
+            width: Dims.w(80)
+            anchors.top: dialogHeader.bottom
+            anchors.topMargin: Dims.h(5)
+            anchors.horizontalCenter: parent.horizontalCenter
+            //% "Item name"
+            previewText: qsTrId("id-item-name")
+            text: appState.editText
+        }
+
+        HandWritingKeyboard {
+            anchors.fill: parent
+        }
+
+        IconButton {
+            iconName: "ios-close-circle-outline"
+            anchors.right: parent.horizontalCenter
+            anchors.rightMargin: Dims.w(2)
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: Dims.iconButtonMargin
+            onClicked: appState.dialogOpen = false
+        }
+
+        IconButton {
+            iconName: appState.editIndex >= 0 ? "ios-checkmark-circle-outline" : "ios-add-circle-outline"
+            anchors.left: parent.horizontalCenter
+            anchors.leftMargin: Dims.w(2)
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: Dims.iconButtonMargin
+            onClicked: {
+                var trimmed = editField.text.trim()
+                if (trimmed.length === 0) {
+                    appState.dialogOpen = false
+                    return
+                }
+                if (appState.editIndex >= 0) {
+                    shoppingModel.setProperty(appState.editIndex, "name", trimmed)
+                } else {
+                    shoppingModel.append({name: trimmed, checked: false})
+                }
+                appState.dialogOpen = false
+                sortList()
+            }
+        }
+    }
+
     ListView {
         id: listView
         anchors.fill: parent
@@ -188,6 +259,11 @@ Application {
                     shoppingModel.setProperty(index, "checked", !checked)
                     sortDelayTimer.start()
                 }
+                onPressAndHold: {
+                    appState.editIndex = index
+                    appState.editText = name
+                    appState.dialogOpen = true
+                }
             }
 
             Rectangle {
@@ -208,15 +284,41 @@ Application {
             }
 
             Text {
-                anchors.centerIn: parent
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: parent.left
+                anchors.leftMargin: DeviceSpecs.hasRoundScreen ? 60 : 10
                 text: "Uncheck All"
                 font.pixelSize: 28
                 color: "#ffffff"
             }
 
             MouseArea {
-                anchors.fill: parent
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: parent.width * 0.75
                 onClicked: uncheckAll()
+            }
+
+            Icon {
+                name: "ios-add-circle-outline"
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.right: parent.right
+                anchors.rightMargin: DeviceSpecs.hasRoundScreen ? 60 : 10
+                width: 48
+                height: 48
+            }
+
+            MouseArea {
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: parent.width * 0.25
+                onClicked: {
+                    appState.editIndex = -1
+                    appState.editText = ""
+                    appState.dialogOpen = true
+                }
             }
 
             Rectangle {
