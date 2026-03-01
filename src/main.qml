@@ -38,6 +38,7 @@ Application {
         property bool dialogOpen: false
         property int editIndex: -1
         property string editText: ""
+        property bool anyChecked: false
     }
 
     Component.onCompleted: {
@@ -104,6 +105,7 @@ Application {
         })
 
         saveShoppingList()
+        updateAnyChecked()
 
         if (!atTop) {
             listView.contentY = currentPosition
@@ -115,6 +117,23 @@ Application {
             shoppingModel.setProperty(i, "checked", false)
         }
         sortList()
+    }
+
+    function checkAll() {
+        for (var i = 0; i < shoppingModel.count; i++) {
+            shoppingModel.setProperty(i, "checked", true)
+        }
+        sortList()
+    }
+
+    function updateAnyChecked() {
+        for (var i = 0; i < shoppingModel.count; i++) {
+            if (shoppingModel.get(i).checked) {
+                appState.anyChecked = true
+                return
+            }
+        }
+        appState.anyChecked = false
     }
 
     Timer {
@@ -336,7 +355,7 @@ Application {
                     bottom: parent.bottom
                     bottomMargin: 16
                 }
-                text: "Uncheck All"
+                text: appState.anyChecked ? "Uncheck All" : "Check All"
                 font.pixelSize: 28
                 color: "#ffffff"
             }
@@ -348,7 +367,7 @@ Application {
                     bottom: parent.bottom
                 }
                 height: parent.height * 0.5
-                onClicked: uncheckAll()
+                onClicked: appState.anyChecked ? uncheckAll() : checkAll()
             }
 
             Rectangle {
