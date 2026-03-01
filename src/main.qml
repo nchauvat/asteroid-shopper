@@ -41,6 +41,8 @@ Application {
         property bool anyChecked: false
         property int swipeDeleteIndex: -1
         property string swipeDeleteName: ""
+        property int uncheckedCount: 0
+        property int totalCount: 0
     }
 
     Component.onCompleted: {
@@ -129,13 +131,16 @@ Application {
     }
 
     function updateAnyChecked() {
-        for (var i = 0; i < shoppingModel.count; i++) {
-            if (shoppingModel.get(i).checked) {
-                appState.anyChecked = true
-                return
+        var unchecked = 0
+        var total = shoppingModel.count
+        for (var i = 0; i < total; i++) {
+            if (!shoppingModel.get(i).checked) {
+                unchecked++
             }
         }
-        appState.anyChecked = false
+        appState.totalCount = total
+        appState.uncheckedCount = unchecked
+        appState.anyChecked = unchecked < total && total > 0
     }
 
     Timer {
@@ -297,16 +302,25 @@ Application {
         }
     }
 
+    PageHeader {
+        id: listHeader
+        text: appState.totalCount > 0 ? appState.uncheckedCount + " / " + appState.totalCount : ""
+    }
+
     ListView {
         id: listView
         anchors {
             fill: parent
-            topMargin: DeviceSpecs.hasRoundScreen ? 30 : 10
             leftMargin: DeviceSpecs.hasRoundScreen ? 30 : 10
         }
         model: shoppingModel
         clip: true
         interactive: !swipeRemorseTimer.visible
+
+        header: Item {
+            width: listView.width
+            height: listHeader.height
+        }
 
         delegate: Item {
             id: delegateRoot
