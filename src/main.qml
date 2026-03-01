@@ -276,17 +276,46 @@ Application {
 
         footer: Item {
             width: listView.width
-            height: 72
+            height: 144
 
             Rectangle {
                 anchors.fill: parent
                 color: "#20ffffff"
             }
 
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
+            Icon {
+                name: "ios-add-circle-outline"
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: 12
+                width: 48
+                height: 48
+            }
+
+            MouseArea {
                 anchors.left: parent.left
-                anchors.leftMargin: DeviceSpecs.hasRoundScreen ? 60 : 10
+                anchors.right: parent.right
+                anchors.top: parent.top
+                height: parent.height * 0.5
+                onClicked: {
+                    appState.editIndex = -1
+                    appState.editText = ""
+                    appState.dialogOpen = true
+                }
+            }
+
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.verticalCenter: parent.verticalCenter
+                width: parent.width
+                height: Dims.l(1)
+                color: "#20ffffff"
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 16
                 text: "Uncheck All"
                 font.pixelSize: 28
                 color: "#ffffff"
@@ -294,31 +323,10 @@ Application {
 
             MouseArea {
                 anchors.left: parent.left
-                anchors.top: parent.top
+                anchors.right: parent.right
                 anchors.bottom: parent.bottom
-                width: parent.width * 0.75
+                height: parent.height * 0.5
                 onClicked: uncheckAll()
-            }
-
-            Icon {
-                name: "ios-add-circle-outline"
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.right: parent.right
-                anchors.rightMargin: DeviceSpecs.hasRoundScreen ? 60 : 10
-                width: 48
-                height: 48
-            }
-
-            MouseArea {
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                width: parent.width * 0.25
-                onClicked: {
-                    appState.editIndex = -1
-                    appState.editText = ""
-                    appState.dialogOpen = true
-                }
             }
 
             Rectangle {
