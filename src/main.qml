@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Timo Könnecke <github.com/eLtMosen>
+ * Copyright (C) 2026 - Timo Könnecke <github.com/eLtMosen>
  *
  * All rights reserved.
  *
@@ -18,7 +18,6 @@
  */
 
 import QtQuick 2.9
-import QtQuick.Layouts 1.15
 import Nemo.Configuration 1.0
 import org.asteroid.utils 1.0
 import org.asteroid.controls 1.0
@@ -29,6 +28,8 @@ Application {
 
     centerColor: "#119DA4"
     outerColor: "#090B0C"
+
+    signal listLoaded()
 
     ConfigurationValue {
         id: userListsConfig
@@ -42,9 +43,8 @@ Application {
         defaultValue: "default"
     }
 
-    // True when at least one user list exists — used in multiple bindings
-    property bool hasUserLists: JSON.parse(userListsConfig.value).length > 0 || !defaultExists
     property bool defaultExists: false
+    property bool hasUserLists: JSON.parse(userListsConfig.value).length > 0 || !defaultExists
 
     function getUserLists() { return JSON.parse(userListsConfig.value) }
     function setUserLists(arr) { userListsConfig.value = JSON.stringify(arr) }
@@ -55,10 +55,6 @@ Application {
 
     QtObject {
         id: appState
-        property bool dialogOpen: false
-        property int editIndex: -1
-        property string editText: ""
-        property string editDialogMode: "item"
         property bool anyChecked: false
         property int uncheckedCount: 0
         property int totalCount: 0
@@ -66,7 +62,6 @@ Application {
         property string swipeDeleteName: ""
         property string swipeDeleteMode: "item"
         property string currentListName: "default"
-        property bool showingAllLists: false
         property bool isLoading: false
     }
 
@@ -74,11 +69,9 @@ Application {
         loadListsModel()
         var last = lastListConfig.value
         var known = getUserLists()
-        if (last !== "default" && known.indexOf(last) < 0) {
-            last = "default"
-        }
-        appState.currentListName = last
-        loadShoppingList()
+        if (last !== "default" && known.indexOf(last) < 0) last = "default"
+            appState.currentListName = last
+            loadShoppingList()
     }
 
     function loadListsModel() {
@@ -109,14 +102,13 @@ Application {
                     if (trimmed.length > 0) {
                         var isChecked = trimmed.charAt(0) === '+'
                         var itemName = (trimmed.charAt(0) === '+' || trimmed.charAt(0) === '-')
-                        ? trimmed.substring(1).trim()
-                        : trimmed
+                        ? trimmed.substring(1).trim() : trimmed
                         shoppingModel.append({ name: itemName, checked: isChecked })
                     }
                 })
                 sortList()
                 appState.isLoading = false
-                Qt.callLater(function() { listView.contentY = -listHeader.height })
+                root.listLoaded()
             }
         }
         xhr.send()
@@ -134,9 +126,6 @@ Application {
     }
 
     function sortList() {
-        var currentPosition = listView.contentY
-        var atTop = listView.atYBeginning
-
         var items = []
         for (var i = 0; i < shoppingModel.count; i++) {
             var item = shoppingModel.get(i)
@@ -155,14 +144,6 @@ Application {
 
         saveShoppingList()
         updateAnyChecked()
-
-        if (appState.isLoading) return
-
-            if (!atTop && shoppingModel.count > 0 && listView.contentHeight > listView.height) {
-                listView.contentY = Math.min(currentPosition, listView.contentHeight - listView.height)
-            } else if (shoppingModel.count === 0) {
-                Qt.callLater(function() { listView.contentY = 0 })
-            }
     }
 
     function uncheckAll() {
@@ -181,9 +162,9 @@ Application {
         for (var i = 0; i < total; i++) {
             if (!shoppingModel.get(i).checked) unchecked++
         }
-        appState.totalCount    = total
+        appState.totalCount     = total
         appState.uncheckedCount = unchecked
-        appState.anyChecked    = unchecked < total && total > 0
+        appState.anyChecked     = unchecked < total && total > 0
     }
 
     function switchToList(listName) {
@@ -205,7 +186,6 @@ Application {
                 xhr.send("")
                 loadListsModel()
                 switchToList(trimmed)
-                    appState.showingAllLists = false
     }
 
     function deleteList(listName) {
@@ -216,24 +196,18 @@ Application {
             defaultExists = false
             if (appState.currentListName === "default") {
                 var remaining = getUserLists()
-                if (remaining.length > 0) {
-                    switchToList(remaining[0])
-                        appState.showingAllLists = true
-                } else {
-                    switchToList("default")
-                }
+                switchToList(remaining.length > 0 ? remaining[0] : "default")
             }
         } else {
             var arr = getUserLists()
             arr = arr.filter(function(n) { return n !== listName })
             setUserLists(arr)
-            var xhr = new XMLHttpRequest()
-            xhr.open("PUT", listFilePath(listName))
-            xhr.send("")
+            var xhr2 = new XMLHttpRequest()
+            xhr2.open("PUT", listFilePath(listName))
+            xhr2.send("")
             if (appState.currentListName === listName) {
-                var remaining = getUserLists()
-                switchToList(remaining.length > 0 ? remaining[0] : "default")
-                    appState.showingAllLists = true
+                var remaining2 = getUserLists()
+                switchToList(remaining2.length > 0 ? remaining2[0] : "default")
             }
         }
         loadListsModel()
@@ -265,190 +239,55 @@ Application {
                 xhr.send()
     }
 
-    Timer {
-        id: sortDelayTimer
-        interval: 500
-        repeat: false
-        onTriggered: sortList()
+    LayerStack {
+        id: layerStack
+        firstPage: shoppingListPageComponent
+    }
+
+    Component {
+        id: shoppingListPageComponent
+        ShoppingListPage { }
+    }
+
+    Component {
+        id: allListsPageComponent
+        AllListsPage { }
+    }
+
+    Component {
+        id: editDialogComponent
+        EditDialog { }
     }
 
     // ----------------------------------------------------------------
-    // Edit dialog — shared for items and lists
+    // Delete remorse timer — triggered from EditDialog
     // ----------------------------------------------------------------
-    Item {
-        id: editDialog
-        anchors.fill: parent
-        z: 10
-        visible: appState.dialogOpen
+    RemorseTimer {
+        id: deleteRemorseTimer
+        duration: 3000
+        gaugeSegmentAmount: 6
+        gaugeStartDegree: -130
+        gaugeEndFromStartDegree: 265
+        //% "Tap to cancel"
+        cancelText: qsTrId("id-tap-to-cancel")
 
-        onVisibleChanged: {
-            if (visible) {
-                editField.text = appState.editText
-                if (appState.editText === "") Qt.callLater(function() { editField.forceActiveFocus() })
+        property string deleteMode: "item"
+        property int deleteItemIndex: -1
+        property string deleteTargetName: ""
+
+        onTriggered: {
+            if (deleteMode === "list") {
+                deleteList(deleteTargetName)
             } else {
-                editField.text = ""
+                shoppingModel.remove(deleteItemIndex)
+                sortList()
             }
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            color: "#090B0C"
-            opacity: 0.95
-        }
-
-        PageHeader {
-            id: dialogHeader
-            text: {
-                if (appState.editDialogMode === "list")
-                    //% "Edit List"
-                    return appState.editIndex >= 0 ? qsTrId("id-edit-list") :
-                    //% "New List"
-                    qsTrId("id-new-list")
-                    //% "Edit Item"
-                    return appState.editIndex >= 0 ? qsTrId("id-edit-item") :
-                    //% "Add Item"
-                    qsTrId("id-add-item")
-            }
-        }
-
-        TextField {
-            id: editField
-            width: Dims.w(80)
-            // Default list has no rename — hide text field for it
-            visible: appState.editDialogMode === "item" || appState.editText !== "default"
-            anchors {
-                top: dialogHeader.bottom
-                topMargin: Dims.h(5)
-                horizontalCenter: parent.horizontalCenter
-            }
-            //% "Item name"
-            previewText: qsTrId("id-item-name")
-            text: appState.editText
-        }
-
-        IconButton {
-            id: cancelButton
-            iconName: "ios-close-circle-outline"
-            anchors {
-                top: editField.visible ? editField.bottom : dialogHeader.bottom
-                topMargin: Dims.h(3)
-                left: parent.horizontalCenter
-                leftMargin: Dims.w(2)
-            }
-            onClicked: appState.dialogOpen = false
-        }
-
-        IconButton {
-            id: confirmButton
-            visible: editField.visible
-            iconName: "ios-checkmark-circle-outline"
-            anchors {
-                top: editField.visible ? editField.bottom : dialogHeader.bottom
-                topMargin: Dims.h(3)
-                right: parent.horizontalCenter
-                rightMargin: Dims.w(2)
-            }
-            onClicked: {
-                var trimmed = editField.text.trim()
-                if (trimmed.length === 0) {
-                    appState.dialogOpen = false
-                    return
-                }
-                if (appState.editDialogMode === "list") {
-                    if (appState.editIndex >= 0) {
-                        renameList(appState.editText, trimmed)
-                    } else {
-                        createList(trimmed)
-                    }
-                } else {
-                    if (appState.editIndex >= 0) {
-                        shoppingModel.setProperty(appState.editIndex, "name", trimmed)
-                    } else {
-                        shoppingModel.append({ name: trimmed, checked: false })
-                    }
-                    sortList()
-                }
-                appState.dialogOpen = false
-            }
-        }
-
-        Item {
-            id: deleteSection
-            visible: appState.editIndex >= 0
-            width: parent.width
-            height: Dims.h(20)
-            anchors {
-                top: cancelButton.bottom
-                topMargin: Dims.l(5)
-                horizontalCenter: parent.horizontalCenter
-            }
-
-            Label {
-                id: deleteLabel
-                anchors {
-                    horizontalCenter: parent.horizontalCenter
-                    top: parent.top
-                }
-                //% "Delete List"
-                text: appState.editDialogMode === "list" ? qsTrId("id-delete-list") :
-                //% "Delete Item"
-                qsTrId("id-delete-item")
-                font.pixelSize: Dims.l(8)
-                color: "#ffffff"
-            }
-
-            Icon {
-                id: deleteIcon
-                name: "ios-close-circle-outline"
-                color: "#FF4444"
-                width: 64
-                height: 64
-                anchors {
-                    horizontalCenter: parent.horizontalCenter
-                    top: deleteLabel.bottom
-                    topMargin: Dims.h(1)
-                }
-            }
-
-            MouseArea {
-                anchors.fill: deleteIcon
-                onClicked: {
-                    //% "Deleting:"
-                    deleteRemorseTimer.action = qsTrId("id-deleting") + "\n"
-                    + (appState.editDialogMode === "list"
-                    ? (appState.editText === "default" ? "Default" : appState.editText)
-                    : appState.editText)
-                    deleteRemorseTimer.start()
-                }
-            }
-        }
-
-        RemorseTimer {
-            id: deleteRemorseTimer
-            duration: 3000
-            gaugeSegmentAmount: 6
-            gaugeStartDegree: -130
-            gaugeEndFromStartDegree: 265
-            //% "Tap to cancel"
-            cancelText: qsTrId("id-tap-to-cancel")
-            onTriggered: {
-                if (appState.editDialogMode === "list") {
-                    deleteList(appState.editText)
-                } else {
-                    shoppingModel.remove(appState.editIndex)
-                    sortList()
-                }
-                appState.dialogOpen = false
-            }
-        }
-
-        HandWritingKeyboard {
-            anchors.fill: parent
+            layerStack.pop()
         }
     }
 
     // ----------------------------------------------------------------
-    // Swipe remorse timer — shared for item and list swipe-delete
+    // Swipe remorse timer — triggered from ShoppingListPage and AllListsPage
     // ----------------------------------------------------------------
     RemorseTimer {
         id: swipeRemorseTimer
@@ -471,654 +310,6 @@ Application {
         onCancelled: {
             appState.swipeDeleteIndex = -1
             appState.swipeDeleteName  = ""
-        }
-    }
-
-    // ----------------------------------------------------------------
-    // All Lists view
-    // ----------------------------------------------------------------
-    Item {
-        id: allListsView
-        anchors.fill: parent
-        z: 5
-        visible: appState.showingAllLists
-
-        Rectangle {
-            anchors.fill: parent
-            color: "#090B0C"
-        }
-
-        PageHeader {
-            id: allListsHeader
-            //% "My Lists"
-            text: qsTrId("id-my-lists")
-        }
-
-        ListView {
-            id: listsListView
-            anchors {
-                fill: parent
-                leftMargin: DeviceSpecs.hasRoundScreen ? 30 : 10
-            }
-            model: listsModel
-            clip: true
-            interactive: !swipeRemorseTimer.visible
-
-            header: Item {
-                width: listsListView.width
-                height: allListsHeader.height
-            }
-
-            delegate: Item {
-                id: listsDelegateRoot
-                width: listsListView.width
-                height: 64
-
-                property real swipeX: 0
-                property bool isDefault: name === "default"
-
-                NumberAnimation {
-                    id: listsSnapBack
-                    target: listsDelegateRoot
-                    property: "swipeX"
-                    to: 0
-                    duration: 200
-                    easing.type: Easing.OutQuad
-                }
-
-                Connections {
-                    target: appState
-                    function onSwipeDeleteNameChanged() {
-                        if (appState.swipeDeleteName === "" && listsDelegateRoot.swipeX !== 0)
-                            listsSnapBack.start()
-                    }
-                }
-
-                Rectangle {
-                    anchors.fill: parent
-                    color: "#CC3333"
-                    opacity: Math.min(1.0, Math.abs(listsDelegateRoot.swipeX) / (listsListView.width * 0.4))
-
-                    Icon {
-                        name: "ios-trash-outline"
-                        anchors.centerIn: parent
-                        width: 40
-                        height: 40
-                        color: "#ffffff"
-                    }
-                }
-
-                Item {
-                    id: listsContent
-                    width: parent.width
-                    height: parent.height
-                    transform: Translate { x: listsDelegateRoot.swipeX }
-
-                    Rectangle {
-                        anchors {
-                            left: parent.left
-                            top: parent.top
-                            bottom: parent.bottom
-                        }
-                        width: 3
-                        color: "#119DA4"
-                        visible: appState.currentListName === name
-                    }
-
-                    Label {
-                        //% "Default"
-                        text: isDefault ? qsTrId("id-default") : name
-                        font.pixelSize: 28
-                        color: isDefault ? "#aaaaaa" : "#ffffff"
-                        anchors {
-                            left: parent.left
-                            leftMargin: DeviceSpecs.hasRoundScreen ? 70 : 15
-                            verticalCenter: parent.verticalCenter
-                        }
-                    }
-
-                    Rectangle {
-                        anchors {
-                            bottom: parent.bottom
-                            left: parent.left
-                            right: parent.right
-                        }
-                        height: Dims.l(1)
-                        color: "#20ffffff"
-                    }
-                }
-
-                Rectangle {
-                    width: parent.width
-                    height: parent.height
-                    transform: Translate { x: listsDelegateRoot.swipeX }
-                    color: listsPress.containsPress && !listsPress.swipeTracking ? "#33ffffff" : "#00000000"
-
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 150
-                            easing.type: Easing.OutQuad
-                        }
-                    }
-                }
-
-                MouseArea {
-                    id: listsPress
-                    anchors.fill: parent
-                    preventStealing: false
-
-                    property real startX: 0
-                    property real startY: 0
-                    property bool swipeTracking: false
-
-                    onPressed: {
-                        startX = mouseX
-                        startY = mouseY
-                        swipeTracking = false
-                    }
-
-                    onPositionChanged: {
-                        var dx = mouseX - startX
-                        var dy = mouseY - startY
-                        if (!swipeTracking) {
-                            if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-                                swipeTracking = true
-                                preventStealing = true
-                            }
-                        }
-                        if (swipeTracking && dx < 0)
-                            listsDelegateRoot.swipeX = Math.max(dx, -listsListView.width * 0.6)
-                    }
-
-                    onReleased: {
-                        if (swipeTracking) {
-                            preventStealing = false
-                            swipeTracking = false
-                            if (listsDelegateRoot.swipeX < -(listsListView.width * 0.35)) {
-                                appState.swipeDeleteMode = "list"
-                                appState.swipeDeleteName = name
-                                //% "Deleting:"
-                                swipeRemorseTimer.action = qsTrId("id-deleting") + "\n" + (isDefault ? "Default" : name)
-                                swipeRemorseTimer.countdownSeconds = 0
-                                swipeRemorseTimer.start()
-                            } else {
-                                listsSnapBack.start()
-                            }
-                        }
-                    }
-
-                    onClicked: {
-                        if (!swipeTracking) {
-                            switchToList(name)
-                                appState.showingAllLists = false
-                        }
-                    }
-
-                    onPressAndHold: {
-                        if (!swipeTracking) {
-                            appState.editDialogMode = "list"
-                            appState.editIndex = index
-                            appState.editText  = name
-                            appState.dialogOpen = true
-                        }
-                    }
-                }
-            }
-
-            footer: Item {
-                width: listsListView.width
-                height: 72
-
-                Rectangle {
-                    anchors.fill: parent
-                    color: "#20ffffff"
-                }
-
-                Label {
-                    anchors.centerIn: parent
-                    //% "New List"
-                    text: qsTrId("id-new-list")
-                    font.pixelSize: 28
-                    color: "#ffffff"
-                }
-
-                Item {
-                    anchors.fill: parent
-
-                    HighlightBar {
-                        onClicked: {
-                            appState.editDialogMode = "list"
-                            appState.editIndex = -1
-                            appState.editText  = ""
-                            appState.dialogOpen = true
-                        }
-                    }
-                }
-
-                Rectangle {
-                    anchors {
-                        bottom: parent.bottom
-                        left: parent.left
-                        right: parent.right
-                    }
-                    height: Dims.l(1)
-                    color: "#20ffffff"
-                }
-            }
-        }
-    }
-
-    // ----------------------------------------------------------------
-    // Main item list view
-    // ----------------------------------------------------------------
-    PageHeader {
-        id: listHeader
-        text: appState.totalCount > 0 ? appState.uncheckedCount + " / " + appState.totalCount : ""
-    }
-
-    ListView {
-        id: listView
-        anchors {
-            fill: parent
-            leftMargin: DeviceSpecs.hasRoundScreen ? 30 : 10
-        }
-        model: shoppingModel
-        clip: true
-        interactive: !swipeRemorseTimer.visible
-
-        header: Item {
-            width: listView.width
-            height: listHeader.height
-        }
-
-        delegate: Item {
-            id: delegateRoot
-            width: listView.width
-            height: 64
-            opacity: checked ? 0.7 : 1.0
-
-            property real swipeX: 0
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 500
-                    easing.type: Easing.InOutQuad
-                }
-            }
-
-            NumberAnimation {
-                id: snapBack
-                target: delegateRoot
-                property: "swipeX"
-                to: 0
-                duration: 200
-                easing.type: Easing.OutQuad
-            }
-
-            Connections {
-                target: appState
-                function onSwipeDeleteIndexChanged() {
-                    if (appState.swipeDeleteIndex === -1 && delegateRoot.swipeX !== 0)
-                        snapBack.start()
-                }
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                color: "#CC3333"
-                opacity: Math.min(1.0, Math.abs(delegateRoot.swipeX) / (listView.width * 0.4))
-
-                Icon {
-                    name: "ios-trash-outline"
-                    anchors.centerIn: parent
-                    width: 40
-                    height: 40
-                    color: "#ffffff"
-                }
-            }
-
-            Item {
-                id: delegateContent
-                width: parent.width
-                height: parent.height
-                transform: Translate { x: delegateRoot.swipeX }
-
-                Rectangle {
-                    id: backgroundRect
-                    anchors.fill: parent
-                    color: checked ? "#222222" : "#00000000"
-                    opacity: checked ? 0.4 : 0.0
-
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: 500
-                            easing.type: Easing.InOutQuad
-                        }
-                    }
-                }
-
-                RowLayout {
-                    anchors.fill: parent
-                    spacing: 12
-
-                    Icon {
-                        id: checkIcon
-                        name: checked ? "ios-checkmark-circle-outline" : "ios-circle-outline"
-                        Layout.preferredWidth: 48
-                        Layout.preferredHeight: 48
-                        Layout.leftMargin: DeviceSpecs.hasRoundScreen ? 60 : 10
-
-                        Behavior on scale {
-                            NumberAnimation {
-                                duration: 250
-                                easing.type: Easing.InOutQuad
-                            }
-                        }
-                        scale: checked ? 1.0 : 0.8
-                    }
-
-                    Label {
-                        text: name
-                        font.pixelSize: 28
-                        font.strikeout: checked
-                        color: checked ? "#ACF39D" : "#ffffff"
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignLeft
-                        Layout.fillWidth: true
-                    }
-                }
-
-                Rectangle {
-                    anchors {
-                        bottom: parent.bottom
-                        left: parent.left
-                        right: parent.right
-                    }
-                    height: Dims.l(1)
-                    color: "#20ffffff"
-                }
-            }
-
-            Rectangle {
-                width: parent.width
-                height: parent.height
-                transform: Translate { x: delegateRoot.swipeX }
-                color: pressArea.containsPress && !pressArea.swipeTracking ? "#33ffffff" : "#00000000"
-
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 150
-                        easing.type: Easing.OutQuad
-                    }
-                }
-            }
-
-            MouseArea {
-                id: pressArea
-                anchors.fill: parent
-                preventStealing: false
-
-                property real startX: 0
-                property real startY: 0
-                property bool swipeTracking: false
-
-                onPressed: {
-                    startX = mouseX
-                    startY = mouseY
-                    swipeTracking = false
-                }
-
-                onPositionChanged: {
-                    var dx = mouseX - startX
-                    var dy = mouseY - startY
-                    if (!swipeTracking) {
-                        if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-                            swipeTracking = true
-                            preventStealing = true
-                        }
-                    }
-                    if (swipeTracking && dx < 0)
-                        delegateRoot.swipeX = Math.max(dx, -listView.width * 0.6)
-                }
-
-                onReleased: {
-                    if (swipeTracking) {
-                        preventStealing = false
-                        swipeTracking = false
-                        if (delegateRoot.swipeX < -(listView.width * 0.35)) {
-                            appState.swipeDeleteMode  = "item"
-                            appState.swipeDeleteIndex = index
-                            appState.swipeDeleteName  = name
-                            //% "Deleting:"
-                            swipeRemorseTimer.action = qsTrId("id-deleting") + "\n" + name
-                            swipeRemorseTimer.countdownSeconds = 0
-                            swipeRemorseTimer.start()
-                        } else {
-                            snapBack.start()
-                        }
-                    }
-                }
-
-                onClicked: {
-                    if (!swipeTracking) {
-                        shoppingModel.setProperty(index, "checked", !checked)
-                        sortDelayTimer.start()
-                    }
-                }
-
-                onPressAndHold: {
-                    if (!swipeTracking) {
-                        appState.editDialogMode = "item"
-                        appState.editIndex = index
-                        appState.editText  = name
-                        appState.dialogOpen = true
-                    }
-                }
-            }
-        }
-
-        footer: Item {
-            width: listView.width
-            height: {
-                var h = 144  // add item + uncheck/check all
-                if (root.hasUserLists) h += 72  // show all lists
-                    if (root.hasUserLists) h += Dims.l(10)  // bottom spacer after show all lists
-                        if (appState.currentListName === "default") h += 240  // warning + create list
-                            return h
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                color: "#20ffffff"
-            }
-
-            // + Add Item
-            Icon {
-                name: "ios-add-circle-outline"
-                anchors {
-                    horizontalCenter: parent.horizontalCenter
-                    top: parent.top
-                    topMargin: 12
-                }
-                width: 48
-                height: 48
-            }
-
-            Item {
-                id: addItemArea
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: parent.top
-                }
-                height: 72
-
-                HighlightBar {
-                    onClicked: {
-                        appState.editDialogMode = "item"
-                        appState.editIndex = -1
-                        appState.editText  = ""
-                        appState.dialogOpen = true
-                    }
-                }
-            }
-
-            Rectangle {
-                id: footerSep1
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: addItemArea.bottom
-                }
-                height: Dims.l(1)
-                color: "#20ffffff"
-            }
-
-            // Uncheck / Check All
-            Text {
-                anchors {
-                    horizontalCenter: parent.horizontalCenter
-                    top: footerSep1.bottom
-                    topMargin: 22
-                }
-                //% "Uncheck All"
-                text: appState.anyChecked ? qsTrId("id-uncheck-all") :
-                //% "Check All"
-                qsTrId("id-check-all")
-                font.pixelSize: 28
-                color: "#ffffff"
-            }
-
-            Item {
-                id: uncheckArea
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: footerSep1.bottom
-                }
-                height: 72
-
-                HighlightBar {
-                    onClicked: appState.anyChecked ? uncheckAll() : checkAll()
-                }
-            }
-
-            // Show All Lists — only when user lists exist
-            Rectangle {
-                id: footerSep2
-                visible: root.hasUserLists
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: uncheckArea.bottom
-                }
-                height: Dims.l(1)
-                color: "#20ffffff"
-            }
-
-            Text {
-                visible: root.hasUserLists
-                anchors {
-                    horizontalCenter: parent.horizontalCenter
-                    top: uncheckArea.bottom
-                    topMargin: 22
-                }
-                //% "Show All Lists"
-                text: qsTrId("id-show-all-lists")
-                font.pixelSize: 28
-                color: "#ffffff"
-            }
-
-            Item {
-                id: showAllListsArea
-                visible: root.hasUserLists
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: uncheckArea.bottom
-                }
-                height: 72
-
-                HighlightBar {
-                    onClicked: appState.showingAllLists = true
-                }
-            }
-
-            Item {
-                id: spacerAfterLists
-                visible: root.hasUserLists
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: showAllListsArea.bottom
-                }
-                height: Dims.l(10)
-            }
-
-            // Default list warning + Create List — only on default list
-            Rectangle {
-                id: footerSep3
-                visible: appState.currentListName === "default"
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: root.hasUserLists ? spacerAfterLists.bottom : uncheckArea.bottom
-                }
-                height: Dims.l(1)
-                color: "#20ffffff"
-            }
-
-            Label {
-                id: warningText
-                visible: appState.currentListName === "default"
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: footerSep3.bottom
-                    leftMargin: 10
-                    rightMargin: 10
-                    topMargin: 8
-                }
-                //% "You are using the default list. Changes here will be lost on reinstall. Create a new list to keep your data."
-                text: qsTrId("id-default-list-warning")
-                font.pixelSize: 20
-                color: "#aaaaaa"
-                wrapMode: Text.Wrap
-                horizontalAlignment: Text.AlignHCenter
-            }
-
-            Icon {
-                visible: appState.currentListName === "default"
-                name: "ios-add-circle-outline"
-                anchors {
-                    horizontalCenter: parent.horizontalCenter
-                    top: warningText.bottom
-                    topMargin: 8
-                }
-                width: 48
-                height: 48
-            }
-
-            Item {
-                id: createListArea
-                visible: appState.currentListName === "default"
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: warningText.bottom
-                    topMargin: 4
-                }
-                height: 64
-
-                HighlightBar {
-                    onClicked: {
-                        appState.editDialogMode = "list"
-                        appState.editIndex = -1
-                        appState.editText  = ""
-                        appState.dialogOpen = true
-                    }
-                }
-            }
         }
     }
 }
