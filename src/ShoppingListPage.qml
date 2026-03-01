@@ -53,7 +53,8 @@ Item {
 
     PageHeader {
         id: listHeader
-        text: appState.totalCount > 0 ? appState.uncheckedCount + " / " + appState.totalCount : ""
+        //% "Default"
+        text: appState.currentListName === "default" ? qsTrId("id-default") : appState.currentListName
     }
 
     ListView {
@@ -425,7 +426,7 @@ Item {
                     rightMargin: 10
                     topMargin: 8
                 }
-                //% "You are using the default list. Changes here will be lost on reinstall. Create a new list to keep your data."
+                //% "This is a demo list meant for exploring the app. It will be reset on reinstall and should be deleted once you have created your own list."
                 text: qsTrId("id-default-list-warning")
                 font.pixelSize: 20
                 color: "#aaaaaa"

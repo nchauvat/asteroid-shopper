@@ -79,11 +79,30 @@ Application {
         xhr.open("GET", listFilePath("default"))
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE) {
-                defaultExists = xhr.responseText.trim() !== ""
+                var defaultContent = xhr.responseText
+                defaultExists = defaultContent.trim() !== ""
                 listsModel.clear()
                 var arr = getUserLists()
-                arr.forEach(function(n) { listsModel.append({ name: n }) })
-                if (defaultExists) listsModel.append({ name: "default" })
+                var names = arr.slice()
+                if (defaultExists) names.push("default")
+                    names.forEach(function(n) { listsModel.append({ name: n, itemCount: 0 }) })
+                    // Reuse already fetched default content for its count
+                    if (defaultExists) {
+                        var defaultCount = defaultContent.split('\n').filter(function(l) { return l.trim() !== '' }).length
+                        listsModel.setProperty(names.indexOf("default"), "itemCount", defaultCount)
+                    }
+                    // Fetch counts for user lists
+                    arr.forEach(function(n, i) {
+                        var countXhr = new XMLHttpRequest()
+                        countXhr.open("GET", listFilePath(n))
+                        countXhr.onreadystatechange = function() {
+                            if (countXhr.readyState === XMLHttpRequest.DONE) {
+                                var count = countXhr.responseText.split('\n').filter(function(l) { return l.trim() !== '' }).length
+                                listsModel.setProperty(i, "itemCount", count)
+                            }
+                        }
+                        countXhr.send()
+                    })
             }
         }
         xhr.send()

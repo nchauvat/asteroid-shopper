@@ -112,6 +112,21 @@ Item {
                         left: parent.left
                         leftMargin: DeviceSpecs.hasRoundScreen ? 70 : 15
                         verticalCenter: parent.verticalCenter
+                        right: countLabel.left
+                        rightMargin: 8
+                    }
+                    elide: Text.ElideRight
+                }
+
+                Label {
+                    id: countLabel
+                    text: itemCount
+                    font.pixelSize: 22
+                    color: "#aaaaaa"
+                    anchors {
+                        right: parent.right
+                        rightMargin: DeviceSpecs.hasRoundScreen ? 70 : 15
+                        verticalCenter: parent.verticalCenter
                     }
                 }
 
