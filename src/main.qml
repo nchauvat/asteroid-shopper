@@ -39,6 +39,8 @@ Application {
         property int editIndex: -1
         property string editText: ""
         property bool anyChecked: false
+        property int swipeDeleteIndex: -1
+        property string swipeDeleteName: ""
     }
 
     Component.onCompleted: {
@@ -275,6 +277,26 @@ Application {
         }
     }
 
+    RemorseTimer {
+        id: swipeRemorseTimer
+        duration: 3000
+        gaugeSegmentAmount: 6
+        gaugeStartDegree: -130
+        gaugeEndFromStartDegree: 265
+        //% "Tap to cancel"
+        cancelText: qsTrId("id-tap-to-cancel")
+        onTriggered: {
+            shoppingModel.remove(appState.swipeDeleteIndex)
+            appState.swipeDeleteIndex = -1
+            appState.swipeDeleteName = ""
+            sortList()
+        }
+        onCancelled: {
+            appState.swipeDeleteIndex = -1
+            appState.swipeDeleteName = ""
+        }
+    }
+
     ListView {
         id: listView
         anchors {
@@ -284,11 +306,15 @@ Application {
         }
         model: shoppingModel
         clip: true
+        interactive: !swipeRemorseTimer.visible
 
         delegate: Item {
+            id: delegateRoot
             width: listView.width
             height: 64
             opacity: checked ? 0.7 : 1.0
+
+            property real swipeX: 0
 
             Behavior on opacity {
                 NumberAnimation {
@@ -297,54 +323,108 @@ Application {
                 }
             }
 
-            Rectangle {
-                id: backgroundRect
-                anchors.fill: parent
-                color: checked ? "#222222" : "#00000000"
-                opacity: checked ? 0.4 : 0.0
+            NumberAnimation {
+                id: snapBack
+                target: delegateRoot
+                property: "swipeX"
+                to: 0
+                duration: 200
+                easing.type: Easing.OutQuad
+            }
 
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 500
-                        easing.type: Easing.InOutQuad
+            Connections {
+                target: appState
+                function onSwipeDeleteIndexChanged() {
+                    if (appState.swipeDeleteIndex === -1 && delegateRoot.swipeX !== 0) {
+                        snapBack.start()
                     }
                 }
             }
 
-            RowLayout {
+            // Red delete background, revealed as item slides left
+            Rectangle {
                 anchors.fill: parent
-                spacing: 12
+                color: "#CC3333"
+                opacity: Math.min(1.0, Math.abs(delegateRoot.swipeX) / (listView.width * 0.4))
 
                 Icon {
-                    id: checkIcon
-                    name: checked ? "ios-checkmark-circle-outline" : "ios-circle-outline"
-                    Layout.preferredWidth: 48
-                    Layout.preferredHeight: 48
-                    Layout.leftMargin: DeviceSpecs.hasRoundScreen ? 60 : 10
+                    name: "ios-trash-outline"
+                    anchors.centerIn: parent
+                    width: 40
+                    height: 40
+                    color: "#ffffff"
+                }
+            }
 
-                    Behavior on scale {
+            // Sliding content layer
+            Item {
+                id: delegateContent
+                width: parent.width
+                height: parent.height
+                transform: Translate { x: delegateRoot.swipeX }
+
+                Rectangle {
+                    id: backgroundRect
+                    anchors.fill: parent
+                    color: checked ? "#222222" : "#00000000"
+                    opacity: checked ? 0.4 : 0.0
+
+                    Behavior on opacity {
                         NumberAnimation {
-                            duration: 250
+                            duration: 500
                             easing.type: Easing.InOutQuad
                         }
                     }
-                    scale: checked ? 1.0 : 0.8
                 }
 
-                Label {
-                    text: name
-                    font.pixelSize: 28
-                    font.strikeout: checked
-                    color: checked ? "#ACF39D" : "#ffffff"
-                    verticalAlignment: Text.AlignVCenter
-                    horizontalAlignment: Text.AlignLeft
-                    Layout.fillWidth: true
+                RowLayout {
+                    anchors.fill: parent
+                    spacing: 12
+
+                    Icon {
+                        id: checkIcon
+                        name: checked ? "ios-checkmark-circle-outline" : "ios-circle-outline"
+                        Layout.preferredWidth: 48
+                        Layout.preferredHeight: 48
+                        Layout.leftMargin: DeviceSpecs.hasRoundScreen ? 60 : 10
+
+                        Behavior on scale {
+                            NumberAnimation {
+                                duration: 250
+                                easing.type: Easing.InOutQuad
+                            }
+                        }
+                        scale: checked ? 1.0 : 0.8
+                    }
+
+                    Label {
+                        text: name
+                        font.pixelSize: 28
+                        font.strikeout: checked
+                        color: checked ? "#ACF39D" : "#ffffff"
+                        verticalAlignment: Text.AlignVCenter
+                        horizontalAlignment: Text.AlignLeft
+                        Layout.fillWidth: true
+                    }
+                }
+
+                Rectangle {
+                    anchors {
+                        bottom: parent.bottom
+                        left: parent.left
+                        right: parent.right
+                    }
+                    height: Dims.l(1)
+                    color: "#20ffffff"
                 }
             }
 
+            // Press flash overlay, also slides with content
             Rectangle {
-                anchors.fill: parent
-                color: pressArea.containsPress ? "#33ffffff" : "#00000000"
+                width: parent.width
+                height: parent.height
+                transform: Translate { x: delegateRoot.swipeX }
+                color: pressArea.containsPress && !pressArea.swipeTracking ? "#33ffffff" : "#00000000"
 
                 Behavior on color {
                     ColorAnimation {
@@ -358,25 +438,62 @@ Application {
                 id: pressArea
                 anchors.fill: parent
                 preventStealing: false
-                onClicked: {
-                    shoppingModel.setProperty(index, "checked", !checked)
-                    sortDelayTimer.start()
-                }
-                onPressAndHold: {
-                    appState.editIndex = index
-                    appState.editText = name
-                    appState.dialogOpen = true
-                }
-            }
 
-            Rectangle {
-                anchors {
-                    bottom: parent.bottom
-                    left: parent.left
-                    right: parent.right
+                property real startX: 0
+                property real startY: 0
+                property bool swipeTracking: false
+
+                onPressed: {
+                    startX = mouseX
+                    startY = mouseY
+                    swipeTracking = false
                 }
-                height: Dims.l(1)
-                color: "#20ffffff"
+
+                onPositionChanged: {
+                    var dx = mouseX - startX
+                    var dy = mouseY - startY
+                    if (!swipeTracking) {
+                        if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+                            swipeTracking = true
+                            preventStealing = true
+                        }
+                    }
+                    if (swipeTracking && dx < 0) {
+                        delegateRoot.swipeX = Math.max(dx, -listView.width * 0.6)
+                    }
+                }
+
+                onReleased: {
+                    if (swipeTracking) {
+                        preventStealing = false
+                        swipeTracking = false
+                        if (delegateRoot.swipeX < -(listView.width * 0.35)) {
+                            appState.swipeDeleteIndex = index
+                            appState.swipeDeleteName = name
+                            //% "Deleting:"
+                            swipeRemorseTimer.action = qsTrId("id-deleting") + "\n" + name
+                            swipeRemorseTimer.countdownSeconds = 0
+                            swipeRemorseTimer.start()
+                        } else {
+                            snapBack.start()
+                        }
+                    }
+                }
+
+                onClicked: {
+                    if (!swipeTracking) {
+                        shoppingModel.setProperty(index, "checked", !checked)
+                        sortDelayTimer.start()
+                    }
+                }
+
+                onPressAndHold: {
+                    if (!swipeTracking) {
+                        appState.editIndex = index
+                        appState.editText = name
+                        appState.dialogOpen = true
+                    }
+                }
             }
         }
 
