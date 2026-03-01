@@ -67,6 +67,7 @@ Application {
         property string swipeDeleteMode: "item"
         property string currentListName: "default"
         property bool showingAllLists: false
+        property bool isLoading: false
     }
 
     Component.onCompleted: {
@@ -96,6 +97,7 @@ Application {
     }
 
     function loadShoppingList() {
+        appState.isLoading = true
         var xhr = new XMLHttpRequest()
         xhr.open("GET", listFilePath(appState.currentListName))
         xhr.onreadystatechange = function() {
@@ -113,6 +115,8 @@ Application {
                     }
                 })
                 sortList()
+                appState.isLoading = false
+                Qt.callLater(function() { listView.contentY = -listHeader.height })
             }
         }
         xhr.send()
@@ -152,11 +156,13 @@ Application {
         saveShoppingList()
         updateAnyChecked()
 
-        if (!atTop && shoppingModel.count > 0) {
-            listView.contentY = currentPosition
-        } else {
-            Qt.callLater(function() { listView.contentY = 0 })
-        }
+        if (appState.isLoading) return
+
+            if (!atTop && shoppingModel.count > 0 && listView.contentHeight > listView.height) {
+                listView.contentY = Math.min(currentPosition, listView.contentHeight - listView.height)
+            } else if (shoppingModel.count === 0) {
+                Qt.callLater(function() { listView.contentY = 0 })
+            }
     }
 
     function uncheckAll() {
@@ -185,7 +191,6 @@ Application {
         appState.currentListName = listName
         lastListConfig.value = listName
         loadShoppingList()
-        Qt.callLater(function() { listView.contentY = 0 })
     }
 
     function createList(listName) {
@@ -368,7 +373,7 @@ Application {
             height: Dims.h(20)
             anchors {
                 top: cancelButton.bottom
-                topMargin: Dims.h(3)
+                topMargin: Dims.l(5)
                 horizontalCenter: parent.horizontalCenter
             }
 
@@ -379,7 +384,7 @@ Application {
                     top: parent.top
                 }
                 text: appState.editDialogMode === "list" ? "Delete List" : "Delete Item"
-                font.pixelSize: 24
+                font.pixelSize: Dims.l(8)
                 color: "#ffffff"
             }
 
@@ -907,8 +912,9 @@ Application {
             height: {
                 var h = 144  // add item + uncheck/check all
                 if (root.hasUserLists) h += 72  // show all lists
-                    if (appState.currentListName === "default") h += 240  // warning + create list
-                        return h
+                    if (root.hasUserLists) h += Dims.l(10)  // bottom spacer after show all lists
+                        if (appState.currentListName === "default") h += 240  // warning + create list
+                            return h
             }
 
             Rectangle {
@@ -1025,6 +1031,17 @@ Application {
                 }
             }
 
+            Item {
+                id: spacerAfterLists
+                visible: root.hasUserLists
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    top: showAllListsArea.bottom
+                }
+                height: Dims.l(10)
+            }
+
             // Default list warning + Create List — only on default list
             Rectangle {
                 id: footerSep3
@@ -1032,7 +1049,7 @@ Application {
                 anchors {
                     left: parent.left
                     right: parent.right
-                    top: root.hasUserLists ? showAllListsArea.bottom : uncheckArea.bottom
+                    top: root.hasUserLists ? spacerAfterLists.bottom : uncheckArea.bottom
                 }
                 height: Dims.l(1)
                 color: "#20ffffff"
