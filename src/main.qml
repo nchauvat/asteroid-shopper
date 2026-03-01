@@ -37,19 +37,14 @@ Application {
     }
 
     ConfigurationValue {
-        id: defaultVisible
-        key: "/asteroid/apps/shopper/defaultVisible"
-        defaultValue: true
-    }
-
-    ConfigurationValue {
         id: lastListConfig
         key: "/asteroid/apps/shopper/lastList"
         defaultValue: "default"
     }
 
     // True when at least one user list exists — used in multiple bindings
-    property bool hasUserLists: JSON.parse(userListsConfig.value).length > 0 || !defaultVisible.value
+    property bool hasUserLists: JSON.parse(userListsConfig.value).length > 0 || !defaultExists
+    property bool defaultExists: false
 
     function getUserLists() { return JSON.parse(userListsConfig.value) }
     function setUserLists(arr) { userListsConfig.value = JSON.stringify(arr) }
@@ -86,10 +81,18 @@ Application {
     }
 
     function loadListsModel() {
-        listsModel.clear()
-        var arr = getUserLists()
-        arr.forEach(function(n) { listsModel.append({ name: n }) })
-        if (defaultVisible.value) listsModel.append({ name: "default" })
+        var xhr = new XMLHttpRequest()
+        xhr.open("GET", listFilePath("default"))
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                defaultExists = xhr.responseText.trim() !== ""
+                listsModel.clear()
+                var arr = getUserLists()
+                arr.forEach(function(n) { listsModel.append({ name: n }) })
+                if (defaultExists) listsModel.append({ name: "default" })
+            }
+        }
+        xhr.send()
     }
 
     function loadShoppingList() {
@@ -202,18 +205,30 @@ Application {
 
     function deleteList(listName) {
         if (listName === "default") {
-            defaultVisible.value = false
+            var xhr = new XMLHttpRequest()
+            xhr.open("PUT", listFilePath("default"))
+            xhr.send("")
+            defaultExists = false
+            if (appState.currentListName === "default") {
+                var remaining = getUserLists()
+                if (remaining.length > 0) {
+                    switchToList(remaining[0])
+                        appState.showingAllLists = true
+                } else {
+                    switchToList("default")
+                }
+            }
         } else {
             var arr = getUserLists()
             arr = arr.filter(function(n) { return n !== listName })
             setUserLists(arr)
-            // Clear file content but leave it on disk
             var xhr = new XMLHttpRequest()
             xhr.open("PUT", listFilePath(listName))
             xhr.send("")
             if (appState.currentListName === listName) {
                 var remaining = getUserLists()
                 switchToList(remaining.length > 0 ? remaining[0] : "default")
+                    appState.showingAllLists = true
             }
         }
         loadListsModel()
