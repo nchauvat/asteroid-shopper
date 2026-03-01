@@ -50,7 +50,7 @@ Item {
         delegate: Item {
             id: listsDelegateRoot
             width: listsListView.width
-            height: 64
+            height: 77
 
             property real swipeX: 0
             property bool isDefault: name === "default"
@@ -80,8 +80,8 @@ Item {
                 Icon {
                     name: "ios-trash-outline"
                     anchors.centerIn: parent
-                    width: 40
-                    height: 40
+                    width: 48
+                    height: 48
                     color: "#ffffff"
                 }
             }
@@ -106,11 +106,11 @@ Item {
                 Label {
                     //% "Default"
                     text: isDefault ? qsTrId("id-default") : name
-                    font.pixelSize: 28
+                    font.pixelSize: 34
                     color: isDefault ? "#aaaaaa" : "#ffffff"
                     anchors {
                         left: parent.left
-                        leftMargin: DeviceSpecs.hasRoundScreen ? 70 : 15
+                        leftMargin: DeviceSpecs.hasRoundScreen ? 72 : 15
                         verticalCenter: parent.verticalCenter
                         right: countLabel.left
                         rightMargin: 8
@@ -121,11 +121,11 @@ Item {
                 Label {
                     id: countLabel
                     text: itemCount
-                    font.pixelSize: 22
+                    font.pixelSize: 26
                     color: "#aaaaaa"
                     anchors {
                         right: parent.right
-                        rightMargin: DeviceSpecs.hasRoundScreen ? 70 : 15
+                        rightMargin: DeviceSpecs.hasRoundScreen ? 72 : 15
                         verticalCenter: parent.verticalCenter
                     }
                 }
@@ -188,8 +188,9 @@ Item {
                         preventStealing = false
                         swipeTracking = false
                         if (listsDelegateRoot.swipeX < -(listsListView.width * 0.35)) {
-                            appState.swipeDeleteMode = "list"
-                            appState.swipeDeleteName = name
+                            appState.swipeDeleteMode   = "list"
+                            appState.swipeDeleteSource = "lists"
+                            appState.swipeDeleteName   = name
                             //% "Deleting:"
                             swipeRemorseTimer.action = qsTrId("id-deleting") + "\n" + (isDefault ? qsTrId("id-default") : name)
                             swipeRemorseTimer.countdownSeconds = 0

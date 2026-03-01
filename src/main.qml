@@ -61,6 +61,7 @@ Application {
         property int swipeDeleteIndex: -1
         property string swipeDeleteName: ""
         property string swipeDeleteMode: "item"
+        property string swipeDeleteSource: ""
         property string currentListName: "default"
         property bool isLoading: false
     }
@@ -319,16 +320,22 @@ Application {
         onTriggered: {
             if (appState.swipeDeleteMode === "list") {
                 deleteList(appState.swipeDeleteName)
+                layerStack.push(allListsPageComponent)
             } else {
                 shoppingModel.remove(appState.swipeDeleteIndex)
                 sortList()
             }
             appState.swipeDeleteIndex = -1
             appState.swipeDeleteName  = ""
+            appState.swipeDeleteSource = ""
         }
         onCancelled: {
+            if (appState.swipeDeleteSource === "lists") {
+                layerStack.push(allListsPageComponent)
+            }
             appState.swipeDeleteIndex = -1
             appState.swipeDeleteName  = ""
+            appState.swipeDeleteSource = ""
         }
     }
 }

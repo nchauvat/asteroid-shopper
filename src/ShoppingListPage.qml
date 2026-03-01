@@ -75,7 +75,7 @@ Item {
         delegate: Item {
             id: delegateRoot
             width: listView.width
-            height: 64
+            height: 77
             opacity: checked ? 0.7 : 1.0
 
             property real swipeX: 0
@@ -112,8 +112,8 @@ Item {
                 Icon {
                     name: "ios-trash-outline"
                     anchors.centerIn: parent
-                    width: 40
-                    height: 40
+                    width: 48
+                    height: 48
                     color: "#ffffff"
                 }
             }
@@ -145,9 +145,9 @@ Item {
                     Icon {
                         id: checkIcon
                         name: checked ? "ios-checkmark-circle-outline" : "ios-circle-outline"
-                        Layout.preferredWidth: 48
-                        Layout.preferredHeight: 48
-                        Layout.leftMargin: DeviceSpecs.hasRoundScreen ? 60 : 10
+                        Layout.preferredWidth: 58
+                        Layout.preferredHeight: 58
+                        Layout.leftMargin: DeviceSpecs.hasRoundScreen ? 72 : 10
 
                         Behavior on scale {
                             NumberAnimation {
@@ -160,7 +160,7 @@ Item {
 
                     Label {
                         text: name
-                        font.pixelSize: 28
+                        font.pixelSize: 34
                         font.strikeout: checked
                         color: checked ? "#ACF39D" : "#ffffff"
                         verticalAlignment: Text.AlignVCenter
@@ -227,9 +227,10 @@ Item {
                         preventStealing = false
                         swipeTracking = false
                         if (delegateRoot.swipeX < -(listView.width * 0.35)) {
-                            appState.swipeDeleteMode  = "item"
-                            appState.swipeDeleteIndex = index
-                            appState.swipeDeleteName  = name
+                            appState.swipeDeleteMode   = "item"
+                            appState.swipeDeleteSource = "shopping"
+                            appState.swipeDeleteIndex  = index
+                            appState.swipeDeleteName   = name
                             //% "Deleting:"
                             swipeRemorseTimer.action = qsTrId("id-deleting") + "\n" + name
                             swipeRemorseTimer.countdownSeconds = 0
@@ -264,11 +265,11 @@ Item {
         footer: Item {
             width: listView.width
             height: {
-                var h = 144
-                if (root.hasUserLists) h += 72
-                if (root.hasUserLists) h += Dims.l(10)
-                if (appState.currentListName === "default") h += 240
-                return h
+                var h = 154  // add item (77) + uncheck/check all (77)
+                if (root.hasUserLists) h += 77   // show all lists
+                    if (root.hasUserLists) h += Dims.l(10)  // bottom spacer
+                        if (appState.currentListName === "default") h += 240  // warning + create list
+                            return h
             }
 
             Rectangle {
@@ -295,7 +296,7 @@ Item {
                     right: parent.right
                     top: parent.top
                 }
-                height: 72
+                height: 77
 
                 HighlightBar {
                     onClicked: {
@@ -343,7 +344,7 @@ Item {
                     right: parent.right
                     top: footerSep1.bottom
                 }
-                height: 72
+                height: 77
 
                 HighlightBar {
                     onClicked: appState.anyChecked ? root.uncheckAll() : root.checkAll()
@@ -384,7 +385,7 @@ Item {
                     right: parent.right
                     top: uncheckArea.bottom
                 }
-                height: 72
+                height: 77
 
                 HighlightBar {
                     onClicked: layerStack.push(allListsPageComponent)
@@ -428,8 +429,8 @@ Item {
                 }
                 //% "This is a demo list meant for exploring the app. It will be reset on reinstall and should be deleted once you have created your own list."
                 text: qsTrId("id-default-list-warning")
-                font.pixelSize: 20
-                color: "#aaaaaa"
+                font.pixelSize: 26
+                color: "#ffffff"
                 wrapMode: Text.Wrap
                 horizontalAlignment: Text.AlignHCenter
             }
