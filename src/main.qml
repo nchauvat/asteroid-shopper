@@ -342,8 +342,22 @@ Application {
                 }
             }
 
-            MouseArea {
+            Rectangle {
                 anchors.fill: parent
+                color: pressArea.containsPress ? "#33ffffff" : "#00000000"
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 150
+                        easing.type: Easing.OutQuad
+                    }
+                }
+            }
+
+            MouseArea {
+                id: pressArea
+                anchors.fill: parent
+                preventStealing: false
                 onClicked: {
                     shoppingModel.setProperty(index, "checked", !checked)
                     sortDelayTimer.start()
@@ -386,17 +400,20 @@ Application {
                 height: 48
             }
 
-            MouseArea {
+            Item {
                 anchors {
                     left: parent.left
                     right: parent.right
                     top: parent.top
                 }
                 height: parent.height * 0.5
-                onClicked: {
-                    appState.editIndex = -1
-                    appState.editText = ""
-                    appState.dialogOpen = true
+
+                HighlightBar {
+                    onClicked: {
+                        appState.editIndex = -1
+                        appState.editText = ""
+                        appState.dialogOpen = true
+                    }
                 }
             }
 
@@ -422,14 +439,17 @@ Application {
                 color: "#ffffff"
             }
 
-            MouseArea {
+            Item {
                 anchors {
                     left: parent.left
                     right: parent.right
                     bottom: parent.bottom
                 }
                 height: parent.height * 0.5
-                onClicked: appState.anyChecked ? uncheckAll() : checkAll()
+
+                HighlightBar {
+                    onClicked: appState.anyChecked ? uncheckAll() : checkAll()
+                }
             }
 
             Rectangle {
