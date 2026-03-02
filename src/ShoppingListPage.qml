@@ -59,10 +59,7 @@ Item {
 
     ListView {
         id: listView
-        anchors {
-            fill: parent
-            leftMargin: DeviceSpecs.hasRoundScreen ? 30 : 10
-        }
+        anchors.fill: parent
         model: shoppingModel
         clip: true
         interactive: !swipeRemorseTimer.visible

@@ -34,10 +34,7 @@ Item {
 
     ListView {
         id: listsListView
-        anchors {
-            fill: parent
-            leftMargin: DeviceSpecs.hasRoundScreen ? 30 : 10
-        }
+        anchors.fill: parent
         model: listsModel
         clip: true
         interactive: !swipeRemorseTimer.visible
@@ -223,7 +220,7 @@ Item {
 
         footer: Item {
             width: listsListView.width
-            height: 72
+            height: 77 + Dims.l(10)
 
             Rectangle {
                 anchors.fill: parent
@@ -234,7 +231,7 @@ Item {
                 anchors.centerIn: parent
                 //% "New List"
                 text: qsTrId("id-new-list")
-                font.pixelSize: 28
+                font.pixelSize: 34
                 color: "#ffffff"
             }
 
