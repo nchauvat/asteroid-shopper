@@ -5,6 +5,8 @@ smartwatches. Manage multiple shopping lists directly from your wrist using
 the handwriting keyboard, with full swipe gestures and the remorse timer
 safety net you know from the rest of the system.
 
+[![Shopper v2.0 on AsteroidOS](https://img.youtube.com/vi/s02918D6KP4/0.jpg)](https://www.youtube.com/watch?v=s02918D6KP4)
+
 ---
 
 ## Features
