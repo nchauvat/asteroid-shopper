@@ -51,12 +51,6 @@ Item {
         onTriggered: page.sortPreservingScroll()
     }
 
-    PageHeader {
-        id: listHeader
-        //% "Default"
-        text: appState.currentListName === "default" ? qsTrId("id-default") : appState.currentListName
-    }
-
     ListView {
         id: listView
         anchors.fill: parent
@@ -468,5 +462,11 @@ Item {
                 }
             }
         }
+    }
+
+    PageHeader {
+        id: listHeader
+        //% "Default"
+        text: appState.currentListName === "default" ? qsTrId("id-default") : appState.currentListName
     }
 }

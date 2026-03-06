@@ -26,12 +26,6 @@ Item {
 
     property var pop
 
-    PageHeader {
-        id: allListsHeader
-        //% "My Lists"
-        text: qsTrId("id-my-lists")
-    }
-
     ListView {
         id: listsListView
         anchors.fill: parent
@@ -260,5 +254,11 @@ Item {
                 color: "#20ffffff"
             }
         }
+    }
+
+    PageHeader {
+        id: allListsHeader
+        //% "My Lists"
+        text: qsTrId("id-my-lists")
     }
 }
