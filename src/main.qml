@@ -150,6 +150,15 @@ Application {
             sortList()
     }
 
+    function updateCurrentListCount() {
+        for (var i = 0; i < listsModel.count; i++) {
+            if (listsModel.get(i).name === appState.currentListName) {
+                listsModel.setProperty(i, "itemCount", shoppingModel.count)
+                return
+            }
+        }
+    }
+
     function updateAnyChecked() {
         var unchecked = 0
         var total = shoppingModel.count
@@ -159,6 +168,7 @@ Application {
         appState.totalCount     = total
         appState.uncheckedCount = unchecked
         appState.anyChecked     = unchecked < total && total > 0
+        updateCurrentListCount()
     }
 
     function switchToList(listName) {
