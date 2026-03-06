@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2019 - Florent Revest <revestflo@gmail.com>
+ * Copyright (C) 2026 - Timo Könnecke <github.com/moWerk>
+ *               2019 - Florent Revest <revestflo@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,10 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include <asteroidapp.h>
+#include <QtQml>
+#include "FileHelper.h"
 
 int main(int argc, char *argv[])
 {
+    qmlRegisterSingletonType<FileHelper>("org.asteroid.shopper", 1, 0, "FileHelper", FileHelper::qmlInstance);
     return AsteroidApp::main(argc, argv);
 }

@@ -21,6 +21,7 @@ import QtQuick 2.9
 import Nemo.Configuration 1.0
 import org.asteroid.utils 1.0
 import org.asteroid.controls 1.0
+import org.asteroid.shopper 1.0
 
 Application {
     id: root
@@ -48,7 +49,6 @@ Application {
 
     function getUserLists() { return JSON.parse(userListsConfig.value) }
     function setUserLists(arr) { userListsConfig.value = JSON.stringify(arr) }
-    function listFilePath(listName) { return "file:///home/ceres/" + listName + "-shopper.txt" }
 
     ListModel { id: shoppingModel }
     ListModel { id: listsModel }
@@ -75,74 +75,48 @@ Application {
             loadShoppingList()
     }
 
+    function countItems(listName) {
+        var content = FileHelper.readFile(listName)
+        if (!content) return 0
+            return content.split('\n').filter(function(l) { return l.trim() !== '' }).length
+    }
+
     function loadListsModel() {
-        var xhr = new XMLHttpRequest()
-        xhr.open("GET", listFilePath("default"))
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                var defaultContent = xhr.responseText
-                defaultExists = defaultContent.trim() !== ""
-                listsModel.clear()
-                var arr = getUserLists()
-                var names = arr.slice()
-                if (defaultExists) names.push("default")
-                    names.forEach(function(n) { listsModel.append({ name: n, itemCount: 0 }) })
-                    // Reuse already fetched default content for its count
-                    if (defaultExists) {
-                        var defaultCount = defaultContent.split('\n').filter(function(l) { return l.trim() !== '' }).length
-                        listsModel.setProperty(names.indexOf("default"), "itemCount", defaultCount)
-                    }
-                    // Fetch counts for user lists
-                    arr.forEach(function(n, i) {
-                        var countXhr = new XMLHttpRequest()
-                        countXhr.open("GET", listFilePath(n))
-                        countXhr.onreadystatechange = function() {
-                            if (countXhr.readyState === XMLHttpRequest.DONE) {
-                                var count = countXhr.responseText.split('\n').filter(function(l) { return l.trim() !== '' }).length
-                                listsModel.setProperty(i, "itemCount", count)
-                            }
-                        }
-                        countXhr.send()
-                    })
-            }
-        }
-        xhr.send()
+        defaultExists = FileHelper.exists("default")
+        listsModel.clear()
+        var arr = getUserLists()
+        arr.forEach(function(n) { listsModel.append({ name: n, itemCount: countItems(n) }) })
+        if (defaultExists) listsModel.append({ name: "default", itemCount: countItems("default") })
     }
 
     function loadShoppingList() {
         appState.isLoading = true
-        var xhr = new XMLHttpRequest()
-        xhr.open("GET", listFilePath(appState.currentListName))
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                shoppingModel.clear()
-                var lines = xhr.responseText.split('\n').filter(function(l) { return l.trim() !== '' })
-                lines.forEach(function(line) {
-                    var trimmed = line.trim()
-                    if (trimmed.length > 0) {
-                        var isChecked = trimmed.charAt(0) === '+'
-                        var itemName = (trimmed.charAt(0) === '+' || trimmed.charAt(0) === '-')
-                        ? trimmed.substring(1).trim() : trimmed
-                        shoppingModel.append({ name: itemName, checked: isChecked })
-                    }
-                })
-                sortList()
-                appState.isLoading = false
-                root.listLoaded()
-            }
+        shoppingModel.clear()
+        var content = FileHelper.readFile(appState.currentListName)
+        if (content) {
+            var lines = content.split('\n').filter(function(l) { return l.trim() !== '' })
+            lines.forEach(function(line) {
+                var trimmed = line.trim()
+                if (trimmed.length > 0) {
+                    var isChecked = trimmed.charAt(0) === '+'
+                    var itemName = (trimmed.charAt(0) === '+' || trimmed.charAt(0) === '-')
+                    ? trimmed.substring(1).trim() : trimmed
+                    shoppingModel.append({ name: itemName, checked: isChecked })
+                }
+            })
         }
-        xhr.send()
+        sortList()
+        appState.isLoading = false
+        root.listLoaded()
     }
 
     function saveShoppingList() {
-        var xhr = new XMLHttpRequest()
-        xhr.open("PUT", listFilePath(appState.currentListName))
         var data = ""
         for (var i = 0; i < shoppingModel.count; i++) {
             var item = shoppingModel.get(i)
             data += (item.checked ? "+" : "-") + item.name + "\n"
         }
-        xhr.send(data)
+        FileHelper.writeFile(appState.currentListName, data)
     }
 
     function sortList() {
@@ -201,18 +175,14 @@ Application {
             if (arr.indexOf(trimmed) >= 0) return
                 arr.push(trimmed)
                 setUserLists(arr)
-                var xhr = new XMLHttpRequest()
-                xhr.open("PUT", listFilePath(trimmed))
-                xhr.send("")
+                FileHelper.writeFile(trimmed, "")
                 loadListsModel()
                 switchToList(trimmed)
     }
 
     function deleteList(listName) {
         if (listName === "default") {
-            var xhr = new XMLHttpRequest()
-            xhr.open("PUT", listFilePath("default"))
-            xhr.send("")
+            FileHelper.writeFile("default", "")
             defaultExists = false
             if (appState.currentListName === "default") {
                 var remaining = getUserLists()
@@ -222,9 +192,7 @@ Application {
             var arr = getUserLists()
             arr = arr.filter(function(n) { return n !== listName })
             setUserLists(arr)
-            var xhr2 = new XMLHttpRequest()
-            xhr2.open("PUT", listFilePath(listName))
-            xhr2.send("")
+            FileHelper.writeFile(listName, "")
             if (appState.currentListName === listName) {
                 var remaining2 = getUserLists()
                 switchToList(remaining2.length > 0 ? remaining2[0] : "default")
@@ -238,25 +206,14 @@ Application {
         if (oldName === trimmed || trimmed === "" || oldName === "default" || trimmed === "default") return
             var arr = getUserLists()
             if (arr.indexOf(trimmed) >= 0) return
-                var xhr = new XMLHttpRequest()
-                xhr.open("GET", listFilePath(oldName))
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === XMLHttpRequest.DONE) {
-                        var content = xhr.responseText
-                        var w1 = new XMLHttpRequest()
-                        w1.open("PUT", listFilePath(trimmed))
-                        w1.send(content)
-                        var w2 = new XMLHttpRequest()
-                        w2.open("PUT", listFilePath(oldName))
-                        w2.send("")
-                        var idx = arr.indexOf(oldName)
-                        if (idx >= 0) arr[idx] = trimmed
-                            setUserLists(arr)
-                            loadListsModel()
-                            if (appState.currentListName === oldName) appState.currentListName = trimmed
-                    }
-                }
-                xhr.send()
+                var content = FileHelper.readFile(oldName)
+                FileHelper.writeFile(trimmed, content)
+                FileHelper.writeFile(oldName, "")
+                var idx = arr.indexOf(oldName)
+                if (idx >= 0) arr[idx] = trimmed
+                    setUserLists(arr)
+                    loadListsModel()
+                    if (appState.currentListName === oldName) appState.currentListName = trimmed
     }
 
     LayerStack {
@@ -325,16 +282,16 @@ Application {
                 shoppingModel.remove(appState.swipeDeleteIndex)
                 sortList()
             }
-            appState.swipeDeleteIndex = -1
-            appState.swipeDeleteName  = ""
+            appState.swipeDeleteIndex  = -1
+            appState.swipeDeleteName   = ""
             appState.swipeDeleteSource = ""
         }
         onCancelled: {
             if (appState.swipeDeleteSource === "lists") {
                 layerStack.push(allListsPageComponent)
             }
-            appState.swipeDeleteIndex = -1
-            appState.swipeDeleteName  = ""
+            appState.swipeDeleteIndex  = -1
+            appState.swipeDeleteName   = ""
             appState.swipeDeleteSource = ""
         }
     }
