@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 - Timo Könnecke <github.com/eLtMosen>
+ * Copyright (C) 2026 - Timo Könnecke <github.com/moWerk>
  *
  * All rights reserved.
  *
@@ -23,41 +23,60 @@ import org.asteroid.utils 1.0
 import org.asteroid.controls 1.0
 
 Item {
-    id: page
+    id: shoppingListPage
+    width: root.width
+    height: root.height
 
-    function sortPreservingScroll() {
-        if (appState.isLoading) return
-        var atTop = listView.atYBeginning
-        var pos = listView.contentY
-        root.sortList()
-        if (!atTop && shoppingModel.count > 0 && listView.contentHeight > listView.height) {
-            Qt.callLater(function() {
-                listView.contentY = Math.min(pos, listView.contentHeight - listView.height)
-            })
-        }
-    }
+    property real savedContentY: 0
 
-    Connections {
-        target: root
-        function onListLoaded() {
-            Qt.callLater(function() { listView.contentY = -listHeader.height })
-        }
-    }
-
+    // ----------------------------------------------------------------
+    // Delayed flat model rebuild — gives check animation time to play
+    // ----------------------------------------------------------------
     Timer {
         id: sortDelayTimer
         interval: 500
         repeat: false
-        onTriggered: page.sortPreservingScroll()
+        onTriggered: {
+            buildFlatModel()
+            Qt.callLater(function() {
+                Qt.callLater(function() {
+                    listView.contentY = Math.min(shoppingListPage.savedContentY,
+                                                 Math.max(0, listView.contentHeight - listView.height))
+                })
+            })
+        }
     }
 
+    // ----------------------------------------------------------------
+    // Restore scroll to top after list switch
+    // ----------------------------------------------------------------
+    Connections {
+        target: root
+        function onListLoaded() {
+            Qt.callLater(function() { listView.positionViewAtBeginning() })
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // Right-edge swipe hint — navigate to All Lists
+    // ----------------------------------------------------------------
+    Indicator {
+        id: rightIndicator
+        edge: Qt.RightEdge
+        Component.onCompleted: animate()
+    }
+
+    // ----------------------------------------------------------------
+    // Main list — fills page entirely; PageHeader paints on top via
+    // declaration order. header: spacer pushes first item below header.
+    // ----------------------------------------------------------------
     ListView {
         id: listView
         anchors.fill: parent
-        model: shoppingModel
+        model: flatModel
         clip: true
-        interactive: !swipeRemorseTimer.visible
 
+        // Spacer so first item starts below PageHeader on initial load
         header: Item {
             width: listView.width
             height: listHeader.height
@@ -66,237 +85,150 @@ Item {
         delegate: Item {
             id: delegateRoot
             width: listView.width
-            height: 77
-            opacity: checked ? 0.7 : 1.0
+            height: model.type === "categoryHeader" ? 58 : 77
 
-            property real swipeX: 0
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 500
-                    easing.type: Easing.InOutQuad
-                }
-            }
-
-            NumberAnimation {
-                id: snapBack
-                target: delegateRoot
-                property: "swipeX"
-                to: 0
-                duration: 200
-                easing.type: Easing.OutQuad
-            }
-
-            Connections {
-                target: appState
-                function onSwipeDeleteIndexChanged() {
-                    if (appState.swipeDeleteIndex === -1 && delegateRoot.swipeX !== 0)
-                        snapBack.start()
-                }
-            }
-
+            // ---- Category colour band ----
             Rectangle {
                 anchors.fill: parent
-                color: "#CC3333"
-                opacity: Math.min(1.0, Math.abs(delegateRoot.swipeX) / (listView.width * 0.4))
+                visible: model.categoryColor !== ""
+                color: model.categoryColor !== "" ? model.categoryColor : "transparent"
+                opacity: model.type === "categoryHeader" ? 0.8 : (model.checked ? 0.2 : 0.45)
+            }
+
+            // ---- Category header content ----
+            Label {
+                visible: model.type === "categoryHeader"
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    left: parent.left
+                    leftMargin: Dims.l(7)
+                }
+                text: model.name
+                font.pixelSize: 28
+                font.bold: true
+                color: "#ffffff"
+            }
+
+            // ---- Item content ----
+            RowLayout {
+                visible: model.type === "item"
+                anchors.fill: parent
+                spacing: 0
+                opacity: model.checked ? 0.6 : 1.0
+
+                Behavior on opacity {
+                    NumberAnimation { duration: 300; easing.type: Easing.InOutQuad }
+                }
 
                 Icon {
-                    name: "ios-trash-outline"
-                    anchors.centerIn: parent
-                    width: 48
-                    height: 48
-                    color: "#ffffff"
+                    name: model.checked ? "ios-checkmark-circle-outline" : "ios-circle-outline"
+                    Layout.preferredWidth: 58
+                    Layout.preferredHeight: 58
+                    Layout.leftMargin: 72
+                }
+
+                Label {
+                    text: model.name
+                    font.pixelSize: 34
+                    font.strikeout: model.checked
+                    color: model.checked ? "#ACF39D" : "#ffffff"
+                    verticalAlignment: Text.AlignVCenter
+                    horizontalAlignment: Text.AlignLeft
+                    elide: Text.ElideRight
+                    Layout.fillWidth: true
+                    Layout.rightMargin: Dims.l(4)
                 }
             }
 
-            Item {
-                id: delegateContent
-                width: parent.width
-                height: parent.height
-                transform: Translate { x: delegateRoot.swipeX }
-
-                Rectangle {
-                    id: backgroundRect
-                    anchors.fill: parent
-                    color: checked ? "#222222" : "#00000000"
-                    opacity: checked ? 0.4 : 0.0
-
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: 500
-                            easing.type: Easing.InOutQuad
-                        }
-                    }
-                }
-
-                RowLayout {
-                    anchors.fill: parent
-                    spacing: 12
-
-                    Icon {
-                        id: checkIcon
-                        name: checked ? "ios-checkmark-circle-outline" : "ios-circle-outline"
-                        Layout.preferredWidth: 58
-                        Layout.preferredHeight: 58
-                        Layout.leftMargin: DeviceSpecs.hasRoundScreen ? 72 : 10
-
-                        Behavior on scale {
-                            NumberAnimation {
-                                duration: 250
-                                easing.type: Easing.InOutQuad
-                            }
-                        }
-                        scale: checked ? 1.0 : 0.8
-                    }
-
-                    Label {
-                        text: name
-                        font.pixelSize: 34
-                        font.strikeout: checked
-                        color: checked ? "#ACF39D" : "#ffffff"
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignLeft
-                        Layout.fillWidth: true
-                    }
-                }
-
-                Rectangle {
-                    anchors {
-                        bottom: parent.bottom
-                        left: parent.left
-                        right: parent.right
-                    }
-                    height: Dims.l(1)
-                    color: "#20ffffff"
-                }
-            }
-
+            // ---- Row separator (items only) ----
             Rectangle {
-                width: parent.width
-                height: parent.height
-                transform: Translate { x: delegateRoot.swipeX }
-                color: pressArea.containsPress && !pressArea.swipeTracking ? "#33ffffff" : "#00000000"
-
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 150
-                        easing.type: Easing.OutQuad
-                    }
-                }
+                visible: model.type === "item"
+                anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
+                height: 1
+                color: "#20ffffff"
             }
 
+            // ---- Interaction ----
             MouseArea {
-                id: pressArea
                 anchors.fill: parent
-                preventStealing: false
-
-                property real startX: 0
-                property real startY: 0
-                property bool swipeTracking: false
-
-                onPressed: {
-                    startX = mouseX
-                    startY = mouseY
-                    swipeTracking = false
-                }
-
-                onPositionChanged: {
-                    var dx = mouseX - startX
-                    var dy = mouseY - startY
-                    if (!swipeTracking) {
-                        if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-                            swipeTracking = true
-                            preventStealing = true
-                        }
-                    }
-                    if (swipeTracking && dx < 0)
-                        delegateRoot.swipeX = Math.max(dx, -listView.width * 0.6)
-                }
-
-                onReleased: {
-                    if (swipeTracking) {
-                        preventStealing = false
-                        swipeTracking = false
-                        if (delegateRoot.swipeX < -(listView.width * 0.35)) {
-                            appState.swipeDeleteMode   = "item"
-                            appState.swipeDeleteSource = "shopping"
-                            appState.swipeDeleteIndex  = index
-                            appState.swipeDeleteName   = name
-                            //% "Deleting:"
-                            swipeRemorseTimer.action = qsTrId("id-deleting") + "\n" + name
-                            swipeRemorseTimer.countdownSeconds = 0
-                            swipeRemorseTimer.start()
-                        } else {
-                            snapBack.start()
-                        }
-                    }
-                }
 
                 onClicked: {
-                    if (!swipeTracking) {
-                        shoppingModel.setProperty(index, "checked", !checked)
-                        sortDelayTimer.start()
+                    if (model.type === "item") {
+                        shoppingListPage.savedContentY = listView.contentY
+                        var newChecked = !model.checked
+                        shoppingModel.setProperty(model.sourceIndex, "checked", newChecked)
+                        flatModel.setProperty(index, "checked", newChecked)
+                        sortDelayTimer.restart()
                     }
                 }
 
                 onPressAndHold: {
-                    if (!swipeTracking) {
-                        // pressAndHold in delegate
+                    if (model.type === "item") {
+                        shoppingListPage.savedContentY = listView.contentY
                         layerStack.push(editDialogComponent, {
-                            pop: function() { layerStack.pop() },
-                                        editDialogMode: "item",
-                                        editIndex: index,
-                                        editText: name
+                            pop:          function() {
+                                layerStack.pop()
+                                Qt.callLater(function() {
+                                    listView.contentY = shoppingListPage.savedContentY
+                                })
+                            },
+                            editIndex:    model.sourceIndex,
+                            editText:     model.name,
+                            editCategory: model.category,
+                            isListEdit:   false
+                        })
+                    } else if (model.type === "categoryHeader") {
+                        layerStack.push(categoryEditDialogComponent, {
+                            pop:          function() { layerStack.pop() },
+                                        categoryName: model.name
                         })
                     }
                 }
             }
         }
 
+        // ----------------------------------------------------------------
+        // Footer
+        // ----------------------------------------------------------------
         footer: Item {
             width: listView.width
-            height: {
-                var h = 154  // add item (77) + uncheck/check all (77)
-                if (root.hasUserLists) h += 77   // show all lists
-                    if (root.hasUserLists) h += Dims.l(10)  // bottom spacer
-                        if (appState.currentListName === "default") h += 240  // warning + create list
-                            return h
-            }
+            height: 154
+            + (hasUserLists ? 100 : 0)
+            + (hasUserLists ? Dims.l(10) : 0)
+            + (appState.currentListName === "default" ? 240 : 0)
 
-            Rectangle {
-                anchors.fill: parent
-                color: "#20ffffff"
-            }
-
-            // + Add Item
-            Icon {
-                name: "ios-add-circle-outline"
-                anchors {
-                    horizontalCenter: parent.horizontalCenter
-                    top: parent.top
-                    topMargin: 12
-                }
-                width: 48
-                height: 48
-            }
-
+            // ── Add Item row ─────────────────────────────────────────────
             Item {
-                id: addItemArea
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: parent.top
-                }
+                id: addRow
+                anchors { top: parent.top; left: parent.left; right: parent.right }
                 height: 77
 
-                HighlightBar {
+                Row {
+                    anchors.centerIn: parent
+                    spacing: Dims.l(3)
+                    Icon {
+                        name: "ios-add-circle-outline"
+                        width: 48; height: 48
+                    }
+                    Label {
+                        height: 48
+                        verticalAlignment: Text.AlignVCenter
+                        //% "Add Item"
+                        text: qsTrId("id-add-item")
+                        font.pixelSize: 26
+                        color: "#80ffffff"
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
                     onClicked: {
-                        // addItemArea HighlightBar
                         layerStack.push(editDialogComponent, {
-                            pop: function() { layerStack.pop() },
-                                        editDialogMode: "item",
-                                        editIndex: -1,
-                                        editText: ""
+                            pop:          function() { layerStack.pop() },
+                                        editIndex:    -1,
+                                        editText:     "",
+                                        editCategory: "",
+                                        isListEdit:   false
                         })
                     }
                 }
@@ -304,169 +236,118 @@ Item {
 
             Rectangle {
                 id: footerSep1
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: addItemArea.bottom
-                }
-                height: Dims.l(1)
+                anchors { top: addRow.bottom; left: parent.left; right: parent.right }
+                height: 1
                 color: "#20ffffff"
             }
 
-            // Uncheck / Check All
-            Text {
-                anchors {
-                    horizontalCenter: parent.horizontalCenter
-                    top: footerSep1.bottom
-                    topMargin: 22
-                }
-                //% "Uncheck All"
-                text: appState.anyChecked ? qsTrId("id-uncheck-all") :
-                //% "Check All"
-                qsTrId("id-check-all")
-                font.pixelSize: 28
-                color: "#ffffff"
-            }
-
+            // ── Check / Uncheck All row ───────────────────────────────────
             Item {
-                id: uncheckArea
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: footerSep1.bottom
-                }
+                id: checkRow
+                anchors { top: footerSep1.bottom; left: parent.left; right: parent.right }
                 height: 77
 
-                HighlightBar {
-                    onClicked: appState.anyChecked ? root.uncheckAll() : root.checkAll()
+                Row {
+                    anchors.centerIn: parent
+                    spacing: Dims.l(3)
+                    Icon {
+                        name: appState.anyChecked ? "ios-refresh-circle-outline" : "ios-checkmark-circle-outline"
+                        width: 48; height: 48
+                    }
+                    Label {
+                        height: 48
+                        verticalAlignment: Text.AlignVCenter
+                        text: appState.anyChecked ? qsTrId("id-uncheck-all") : qsTrId("id-check-all")
+                        font.pixelSize: 26
+                        color: "#80ffffff"
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: appState.anyChecked ? uncheckAll() : checkAll()
                 }
             }
 
-            // Show All Lists — only when user lists exist or default is hidden
             Rectangle {
                 id: footerSep2
-                visible: root.hasUserLists
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: uncheckArea.bottom
-                }
-                height: Dims.l(1)
+                visible: hasUserLists
+                anchors { top: checkRow.bottom; left: parent.left; right: parent.right }
+                height: hasUserLists ? 1 : 0
                 color: "#20ffffff"
             }
 
-            Text {
-                visible: root.hasUserLists
-                anchors {
-                    horizontalCenter: parent.horizontalCenter
-                    top: uncheckArea.bottom
-                    topMargin: 22
-                }
-                //% "Show All Lists"
-                text: qsTrId("id-show-all-lists")
-                font.pixelSize: 28
-                color: "#ffffff"
-            }
-
+            // ── All My Hauls row (taller for round-screen label safety) ───
             Item {
-                id: showAllListsArea
-                visible: root.hasUserLists
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: uncheckArea.bottom
-                }
-                height: 77
+                id: allListsRow
+                visible: hasUserLists
+                anchors { top: footerSep2.bottom; left: parent.left; right: parent.right }
+                height: hasUserLists ? 100 : 0
 
-                HighlightBar {
-                    onClicked: layerStack.push(allListsPageComponent)
+                Row {
+                    anchors.centerIn: parent
+                    spacing: Dims.l(3)
+                    Icon {
+                        name: "ios-list-box-outline"
+                        width: 48; height: 48
+                    }
+                    Label {
+                        height: 48
+                        verticalAlignment: Text.AlignVCenter
+                        //% "All My Hauls"
+                        text: qsTrId("id-show-all-lists")
+                        font.pixelSize: 26
+                        color: "#80ffffff"
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: layerStack.push(allListsPageComponent, {
+                        pop: function() { layerStack.pop() }
+                    })
                 }
             }
 
             Item {
                 id: spacerAfterLists
-                visible: root.hasUserLists
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: showAllListsArea.bottom
-                }
-                height: Dims.l(10)
+                anchors { top: allListsRow.bottom; left: parent.left; right: parent.right }
+                height: hasUserLists ? Dims.l(10) : 0
             }
 
-            // Default list warning + Create List — only on default list
             Rectangle {
                 id: footerSep3
-                visible: appState.currentListName === "default"
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: root.hasUserLists ? spacerAfterLists.bottom : uncheckArea.bottom
-                }
-                height: Dims.l(1)
+                visible: hasUserLists
+                anchors { top: spacerAfterLists.bottom; left: parent.left; right: parent.right }
+                height: hasUserLists ? 1 : 0
                 color: "#20ffffff"
             }
 
             Label {
-                id: warningText
                 visible: appState.currentListName === "default"
                 anchors {
+                    top: hasUserLists ? footerSep3.bottom : footerSep2.bottom
+                    topMargin: Dims.l(5)
                     left: parent.left
                     right: parent.right
-                    top: footerSep3.bottom
-                    leftMargin: 10
-                    rightMargin: 10
-                    topMargin: 8
+                    leftMargin: Dims.l(8)
+                    rightMargin: Dims.l(8)
                 }
-                //% "This is a demo list meant for exploring the app. It will be reset on reinstall and should be deleted once you have created your own list."
+                //% "This is the Starter Pack.\nLong-press any item or list to edit.\nSwipe left to delete.\nThe Starter Pack can be cleared but not deleted."
                 text: qsTrId("id-default-list-warning")
                 font.pixelSize: 26
                 color: "#ffffff"
-                wrapMode: Text.Wrap
+                wrapMode: Text.WordWrap
                 horizontalAlignment: Text.AlignHCenter
-            }
-
-            Icon {
-                visible: appState.currentListName === "default"
-                name: "ios-add-circle-outline"
-                anchors {
-                    horizontalCenter: parent.horizontalCenter
-                    top: warningText.bottom
-                    topMargin: 8
-                }
-                width: 48
-                height: 48
-            }
-
-            Item {
-                id: createListArea
-                visible: appState.currentListName === "default"
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: warningText.bottom
-                    topMargin: 4
-                }
-                height: 64
-
-                HighlightBar {
-                    onClicked: {
-                        // createListArea HighlightBar
-                        layerStack.push(editDialogComponent, {
-                            pop: function() { layerStack.pop() },
-                                        editDialogMode: "list",
-                                        editIndex: -1,
-                                        editText: ""
-                        })
-                    }
-                }
             }
         }
     }
 
+    // ---- PageHeader last — natural paint order keeps it on top ----
     PageHeader {
         id: listHeader
-        //% "Default"
-        text: appState.currentListName === "default" ? qsTrId("id-default") : appState.currentListName
+        text: appState.currentListName === "default"
+        ? qsTrId("id-default")
+        : appState.currentListName
     }
 }

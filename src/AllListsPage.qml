@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 - Timo Könnecke <github.com/eLtMosen>
+ * Copyright (C) 2026 - Timo Könnecke <github.com/moWerk>
  *
  * All rights reserved.
  *
@@ -22,243 +22,162 @@ import org.asteroid.utils 1.0
 import org.asteroid.controls 1.0
 
 Item {
-    id: page
+    id: allListsPage
+    width: root.width
+    height: root.height
 
-    property var pop
+    property var pop: function() {}
 
+    // ----------------------------------------------------------------
+    // Right-edge swipe hint — navigate back
+    // ----------------------------------------------------------------
+    Indicator {
+        id: leftIndicator
+        edge: Qt.LeftEdge
+        Component.onCompleted: animate()
+    }
+
+    // ----------------------------------------------------------------
+    // Lists ListView — fills page, PageHeader paints on top
+    // ----------------------------------------------------------------
     ListView {
-        id: listsListView
+        id: listsView
         anchors.fill: parent
         model: listsModel
         clip: true
-        interactive: !swipeRemorseTimer.visible
 
+        // Spacer so first row starts below PageHeader
         header: Item {
-            width: listsListView.width
-            height: allListsHeader.height
+            width: listsView.width
+            height: listsHeader.height
         }
 
         delegate: Item {
-            id: listsDelegateRoot
-            width: listsListView.width
+            id: listDelegateRoot
+            width: listsView.width
             height: 77
 
-            property real swipeX: 0
-            property bool isDefault: name === "default"
+            property bool isDefault: model.name === "default"
+            property bool isCurrent: model.name === appState.currentListName
 
-            NumberAnimation {
-                id: listsSnapBack
-                target: listsDelegateRoot
-                property: "swipeX"
-                to: 0
-                duration: 200
-                easing.type: Easing.OutQuad
-            }
-
-            Connections {
-                target: appState
-                function onSwipeDeleteNameChanged() {
-                    if (appState.swipeDeleteName === "" && listsDelegateRoot.swipeX !== 0)
-                        listsSnapBack.start()
-                }
-            }
-
+            // Active list indicator bar
             Rectangle {
-                anchors.fill: parent
-                color: "#CC3333"
-                opacity: Math.min(1.0, Math.abs(listsDelegateRoot.swipeX) / (listsListView.width * 0.4))
-
-                Icon {
-                    name: "ios-trash-outline"
-                    anchors.centerIn: parent
-                    width: 48
-                    height: 48
-                    color: "#ffffff"
-                }
+                anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+                width: 4
+                color: "#119DA4"
+                visible: isCurrent
             }
 
-            Item {
-                id: listsContent
-                width: parent.width
-                height: parent.height
-                transform: Translate { x: listsDelegateRoot.swipeX }
-
-                Rectangle {
-                    anchors {
-                        left: parent.left
-                        top: parent.top
-                        bottom: parent.bottom
-                    }
-                    width: 3
-                    color: "#119DA4"
-                    visible: appState.currentListName === name
+            // List name
+            Label {
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    left: parent.left
+                    leftMargin: Dims.l(12)
+                    right: countLabel.left
+                    rightMargin: Dims.l(3)
                 }
-
-                Label {
-                    //% "Default"
-                    text: isDefault ? qsTrId("id-default") : name
-                    font.pixelSize: 34
-                    color: isDefault ? "#aaaaaa" : "#ffffff"
-                    anchors {
-                        left: parent.left
-                        leftMargin: DeviceSpecs.hasRoundScreen ? 72 : 15
-                        verticalCenter: parent.verticalCenter
-                        right: countLabel.left
-                        rightMargin: 8
-                    }
-                    elide: Text.ElideRight
-                }
-
-                Label {
-                    id: countLabel
-                    text: itemCount
-                    font.pixelSize: 26
-                    color: "#aaaaaa"
-                    anchors {
-                        right: parent.right
-                        rightMargin: DeviceSpecs.hasRoundScreen ? 72 : 15
-                        verticalCenter: parent.verticalCenter
-                    }
-                }
-
-                Rectangle {
-                    anchors {
-                        bottom: parent.bottom
-                        left: parent.left
-                        right: parent.right
-                    }
-                    height: Dims.l(1)
-                    color: "#20ffffff"
-                }
+                //% "Starter Pack"
+                text: isDefault ? qsTrId("id-default") : model.name
+                font.pixelSize: 34
+                color: isCurrent ? "#119DA4" : "#ffffff"
+                elide: Text.ElideRight
             }
 
+            // Item count
+            Label {
+                id: countLabel
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    right: parent.right
+                    rightMargin: Dims.l(12)
+                }
+                text: model.itemCount
+                font.pixelSize: 26
+                color: "#80ffffff"
+            }
+
+            // Row separator
             Rectangle {
-                width: parent.width
-                height: parent.height
-                transform: Translate { x: listsDelegateRoot.swipeX }
-                color: listsPress.containsPress && !listsPress.swipeTracking ? "#33ffffff" : "#00000000"
-
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 150
-                        easing.type: Easing.OutQuad
-                    }
-                }
+                anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
+                height: 1
+                color: "#20ffffff"
             }
 
             MouseArea {
-                id: listsPress
                 anchors.fill: parent
-                preventStealing: false
-
-                property real startX: 0
-                property real startY: 0
-                property bool swipeTracking: false
-
-                onPressed: {
-                    startX = mouseX
-                    startY = mouseY
-                    swipeTracking = false
-                }
-
-                onPositionChanged: {
-                    var dx = mouseX - startX
-                    var dy = mouseY - startY
-                    if (!swipeTracking) {
-                        if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-                            swipeTracking = true
-                            preventStealing = true
-                        }
-                    }
-                    if (swipeTracking && dx < 0)
-                        listsDelegateRoot.swipeX = Math.max(dx, -listsListView.width * 0.6)
-                }
-
-                onReleased: {
-                    if (swipeTracking) {
-                        preventStealing = false
-                        swipeTracking = false
-                        if (listsDelegateRoot.swipeX < -(listsListView.width * 0.35)) {
-                            appState.swipeDeleteMode   = "list"
-                            appState.swipeDeleteSource = "lists"
-                            appState.swipeDeleteName   = name
-                            //% "Deleting:"
-                            swipeRemorseTimer.action = qsTrId("id-deleting") + "\n" + (isDefault ? qsTrId("id-default") : name)
-                            swipeRemorseTimer.countdownSeconds = 0
-                            swipeRemorseTimer.start()
-                        } else {
-                            listsSnapBack.start()
-                        }
-                    }
-                }
 
                 onClicked: {
-                    if (!swipeTracking) {
-                        root.switchToList(name)
+                    switchToList(model.name)
                         pop()
-                    }
                 }
 
                 onPressAndHold: {
-                    if (!swipeTracking) {
-                        layerStack.push(editDialogComponent, {
-                            pop: function() { layerStack.pop() },
-                                        editDialogMode: "list",
-                                        editIndex: index,
-                                        editText: name
-                        })
-                    }
+                    layerStack.push(editDialogComponent, {
+                        pop:        function() { layerStack.pop() },
+                                    editIndex:  isDefault ? -1 : model.index,
+                                    editText:   model.name,
+                                    isListEdit: true
+                    })
                 }
             }
         }
 
+        // ----------------------------------------------------------------
+        // Footer — New List button
+        // ----------------------------------------------------------------
         footer: Item {
-            width: listsListView.width
-            height: 77 + Dims.l(10)
+            width: listsView.width
+            height: 77
 
-            Rectangle {
-                anchors.fill: parent
-                color: "#20ffffff"
+            Icon {
+                id: newListIcon
+                name: "ios-add-circle-outline"
+                anchors {
+                    horizontalCenter: parent.horizontalCenter
+                    top: parent.top
+                    topMargin: Dims.l(3)
+                }
+                width: 58
+                height: 58
             }
 
             Label {
-                anchors.centerIn: parent
-                //% "New List"
-                text: qsTrId("id-new-list")
-                font.pixelSize: 34
-                color: "#ffffff"
-            }
-
-            Item {
-                anchors.fill: parent
-
-                HighlightBar {
-                    onClicked: {
-                        layerStack.push(editDialogComponent, {
-                            pop: function() { layerStack.pop() },
-                                        editDialogMode: "list",
-                                        editIndex: -1,
-                                        editText: ""
-                        })
-                    }
+                anchors {
+                    horizontalCenter: parent.horizontalCenter
+                    top: newListIcon.bottom
+                    topMargin: Dims.l(1)
                 }
+                //% "Fresh Haul"
+                text: qsTrId("id-new-list")
+                font.pixelSize: 26
+                color: "#80ffffff"
             }
 
             Rectangle {
-                anchors {
-                    bottom: parent.bottom
-                    left: parent.left
-                    right: parent.right
-                }
-                height: Dims.l(1)
+                anchors { top: parent.top; left: parent.left; right: parent.right }
+                height: 1
                 color: "#20ffffff"
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    layerStack.push(editDialogComponent, {
+                        pop:        function() { layerStack.pop() },
+                                    editIndex:  -1,
+                                    editText:   "",
+                                    isListEdit: true
+                    })
+                }
             }
         }
     }
 
+    // ---- PageHeader last — natural paint order keeps it on top ----
     PageHeader {
-        id: allListsHeader
-        //% "My Lists"
+        id: listsHeader
+        //% "My Hauls"
         text: qsTrId("id-my-lists")
     }
 }

@@ -1,8 +1,9 @@
-<!DOCTYPE RCC><RCC version="1.0">
+<RCC>
     <qresource prefix="/">
         <file>main.qml</file>
         <file>ShoppingListPage.qml</file>
         <file>AllListsPage.qml</file>
         <file>EditDialog.qml</file>
+        <file>CategoryEditDialog.qml</file>
     </qresource>
 </RCC>

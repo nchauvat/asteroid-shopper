@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 - Timo Könnecke <github.com/eLtMosen>
+ * Copyright (C) 2026 - Timo Könnecke <github.com/moWerk>
  *               2025 - Ed Beroset <beroset@ieee.org>
  *
  * This program is free software: you can redistribute it and/or modify

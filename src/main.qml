@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 - Timo Könnecke <github.com/eLtMosen>
+ * Copyright (C) 2026 - Timo Könnecke <github.com/moWerk>
  *
  * All rights reserved.
  *
@@ -31,7 +31,11 @@ Application {
     outerColor: "#090B0C"
 
     signal listLoaded()
+    signal deleteConfirmed()
 
+    // ----------------------------------------------------------------
+    // User lists config
+    // ----------------------------------------------------------------
     ConfigurationValue {
         id: userListsConfig
         key: "/asteroid/apps/shopper/lists"
@@ -44,24 +48,101 @@ Application {
         defaultValue: "default"
     }
 
+    // ----------------------------------------------------------------
+    // Categories config — empty string means use built-in defaults
+    // ----------------------------------------------------------------
+    ConfigurationValue {
+        id: categoriesConfig
+        key: "/asteroid/apps/shopper/categories"
+        defaultValue: ""
+    }
+
+    readonly property var defaultCategories: [
+        { name: "Produce",     color: "#7BC67E", sortOrder: 0 },
+        { name: "Dairy",       color: "#F5E642", sortOrder: 1 },
+        { name: "Meat & Fish", color: "#E07A5F", sortOrder: 2 },
+        { name: "Bakery",      color: "#C4A35A", sortOrder: 3 },
+        { name: "Frozen",      color: "#8ECAE6", sortOrder: 4 },
+        { name: "Pantry",      color: "#B0B0B0", sortOrder: 5 },
+        { name: "Drinks",      color: "#6A9EC4", sortOrder: 6 },
+        { name: "Household",   color: "#9B72CF", sortOrder: 7 },
+        { name: "Snacks",      color: "#E8A838", sortOrder: 8 },
+        { name: "Baby & Pet",  color: "#F4A8C0", sortOrder: 9 }
+    ]
+
     property bool defaultExists: false
     property bool hasUserLists: JSON.parse(userListsConfig.value).length > 0 || !defaultExists
 
+    // ----------------------------------------------------------------
+    // List config helpers
+    // ----------------------------------------------------------------
     function getUserLists() { return JSON.parse(userListsConfig.value) }
     function setUserLists(arr) { userListsConfig.value = JSON.stringify(arr) }
 
+    // ----------------------------------------------------------------
+    // Category helpers
+    // ----------------------------------------------------------------
+    function getCategories() {
+        var val = categoriesConfig.value
+        if (!val || val === "") return defaultCategories.slice()
+            return JSON.parse(val)
+    }
+
+    function setCategories(arr) {
+        categoriesConfig.value = JSON.stringify(arr)
+    }
+
+    function getCategoryColor(name) {
+        if (!name || name === "") return ""
+            var cats = getCategories()
+            for (var i = 0; i < cats.length; i++) {
+                if (cats[i].name === name) return cats[i].color
+            }
+            return ""
+    }
+
+    function getCategoryNames() {
+        var cats = getCategories()
+        cats.sort(function(a, b) { return a.sortOrder - b.sortOrder })
+        return cats.map(function(c) { return c.name })
+    }
+
+    function renameCategoryInItems(oldName, newName) {
+        for (var i = 0; i < shoppingModel.count; i++) {
+            if (shoppingModel.get(i).category === oldName)
+                shoppingModel.setProperty(i, "category", newName)
+        }
+    }
+
+    function moveCategoryToPosition(categoryName, newPosition) {
+        var cats = getCategories()
+        cats.sort(function(a, b) { return a.sortOrder - b.sortOrder })
+        var idx = -1
+        for (var i = 0; i < cats.length; i++) {
+            if (cats[i].name === categoryName) { idx = i; break }
+        }
+        if (idx < 0) return
+            var cat = cats.splice(idx, 1)[0]
+            cats.splice(Math.max(0, Math.min(newPosition - 1, cats.length)), 0, cat)
+            cats.forEach(function(c, i) { c.sortOrder = i })
+            setCategories(cats)
+    }
+
+    // ----------------------------------------------------------------
+    // Data models
+    // ----------------------------------------------------------------
     ListModel { id: shoppingModel }
     ListModel { id: listsModel }
+    ListModel { id: flatModel }
 
+    // ----------------------------------------------------------------
+    // App state
+    // ----------------------------------------------------------------
     QtObject {
         id: appState
         property bool anyChecked: false
         property int uncheckedCount: 0
         property int totalCount: 0
-        property int swipeDeleteIndex: -1
-        property string swipeDeleteName: ""
-        property string swipeDeleteMode: "item"
-        property string swipeDeleteSource: ""
         property string currentListName: "default"
         property bool isLoading: false
     }
@@ -75,12 +156,36 @@ Application {
             loadShoppingList()
     }
 
+    // ----------------------------------------------------------------
+    // File line parser — handles both legacy and category-prefixed lines
+    // Format: ±CategoryName:itemName  or  ±itemName  (legacy)
+    // ----------------------------------------------------------------
+    function parseLine(line) {
+        var trimmed = line.trim()
+        if (trimmed.length === 0) return null
+            var isChecked = trimmed.charAt(0) === '+'
+            var rest = (trimmed.charAt(0) === '+' || trimmed.charAt(0) === '-')
+            ? trimmed.substring(1) : trimmed
+            var colonIdx = rest.indexOf(':')
+            var category = ""
+            var name = rest
+            if (colonIdx >= 0) {
+                category = rest.substring(0, colonIdx).trim()
+                name = rest.substring(colonIdx + 1).trim()
+            }
+            if (name.length === 0) return null
+                return { name: name, checked: isChecked, category: category }
+    }
+
     function countItems(listName) {
         var content = FileHelper.readFile(listName)
         if (!content) return 0
             return content.split('\n').filter(function(l) { return l.trim() !== '' }).length
     }
 
+    // ----------------------------------------------------------------
+    // List management
+    // ----------------------------------------------------------------
     function loadListsModel() {
         defaultExists = FileHelper.exists("default")
         listsModel.clear()
@@ -94,18 +199,13 @@ Application {
         shoppingModel.clear()
         var content = FileHelper.readFile(appState.currentListName)
         if (content) {
-            var lines = content.split('\n').filter(function(l) { return l.trim() !== '' })
+            var lines = content.split('\n')
             lines.forEach(function(line) {
-                var trimmed = line.trim()
-                if (trimmed.length > 0) {
-                    var isChecked = trimmed.charAt(0) === '+'
-                    var itemName = (trimmed.charAt(0) === '+' || trimmed.charAt(0) === '-')
-                    ? trimmed.substring(1).trim() : trimmed
-                    shoppingModel.append({ name: itemName, checked: isChecked })
-                }
+                var parsed = parseLine(line)
+                if (parsed) shoppingModel.append(parsed)
             })
         }
-        sortList()
+        buildFlatModel()
         appState.isLoading = false
         root.listLoaded()
     }
@@ -114,27 +214,77 @@ Application {
         var data = ""
         for (var i = 0; i < shoppingModel.count; i++) {
             var item = shoppingModel.get(i)
-            data += (item.checked ? "+" : "-") + item.name + "\n"
+            var prefix = item.checked ? "+" : "-"
+            data += (item.category && item.category !== "")
+            ? prefix + item.category + ":" + item.name + "\n"
+            : prefix + item.name + "\n"
         }
         FileHelper.writeFile(appState.currentListName, data)
     }
 
-    function sortList() {
-        var items = []
-        for (var i = 0; i < shoppingModel.count; i++) {
-            var item = shoppingModel.get(i)
-            items.push({ name: item.name, checked: item.checked })
+    // ----------------------------------------------------------------
+    // Flat display model builder
+    //
+    // Layout order:
+    //   1. Category groups (sorted by sortOrder)
+    //      — header row per category if it has ≥1 unchecked item
+    //      — unchecked items alphabetically within group
+    //   2. Uncategorized unchecked items (no header, plain rows)
+    //   3. All checked items flat at bottom (no category color)
+    //
+    // flatModel roles: type, name, checked, category, categoryColor, sourceIndex
+    // ----------------------------------------------------------------
+    function buildFlatModel() {
+        flatModel.clear()
+        var cats = getCategories()
+        cats.sort(function(a, b) { return a.sortOrder - b.sortOrder })
+
+        // — Category groups —
+        for (var ci = 0; ci < cats.length; ci++) {
+            var cat = cats[ci]
+            var items = []
+            for (var ii = 0; ii < shoppingModel.count; ii++) {
+                var sm = shoppingModel.get(ii)
+                if (!sm.checked && sm.category === cat.name)
+                    items.push({ name: sm.name, sourceIndex: ii })
+            }
+            if (items.length === 0) continue
+                items.sort(function(a, b) { return a.name.localeCompare(b.name) })
+                flatModel.append({ type: "categoryHeader", name: cat.name, checked: false,
+                    category: cat.name, categoryColor: cat.color, sourceIndex: -1 })
+                for (var ai = 0; ai < items.length; ai++) {
+                    flatModel.append({ type: "item", name: items[ai].name, checked: false,
+                        category: cat.name, categoryColor: cat.color,
+                        sourceIndex: items[ai].sourceIndex })
+                }
         }
 
-        var unchecked = items.filter(function(item) { return !item.checked })
-        var checked   = items.filter(function(item) { return  item.checked })
+        // — Uncategorized unchecked items —
+        var uncatItems = []
+        for (var ui = 0; ui < shoppingModel.count; ui++) {
+            var um = shoppingModel.get(ui)
+            if (!um.checked && (!um.category || um.category === ""))
+                uncatItems.push({ name: um.name, sourceIndex: ui })
+        }
+        uncatItems.sort(function(a, b) { return a.name.localeCompare(b.name) })
+        for (var uu = 0; uu < uncatItems.length; uu++) {
+            flatModel.append({ type: "item", name: uncatItems[uu].name, checked: false,
+                category: "", categoryColor: "", sourceIndex: uncatItems[uu].sourceIndex })
+        }
 
-        unchecked.sort(function(a, b) { return a.name.localeCompare(b.name) })
-        checked.sort(  function(a, b) { return a.name.localeCompare(b.name) })
-
-        var newIndex = 0
-        unchecked.forEach(function(item) { shoppingModel.set(newIndex++, { name: item.name, checked: item.checked }) })
-        checked.forEach(  function(item) { shoppingModel.set(newIndex++, { name: item.name, checked: item.checked }) })
+        // — Checked items flat at bottom —
+        var checkedItems = []
+        for (var chi = 0; chi < shoppingModel.count; chi++) {
+            var chm = shoppingModel.get(chi)
+            if (chm.checked)
+                checkedItems.push({ name: chm.name, category: chm.category, sourceIndex: chi })
+        }
+        checkedItems.sort(function(a, b) { return a.name.localeCompare(b.name) })
+        for (var ch = 0; ch < checkedItems.length; ch++) {
+            flatModel.append({ type: "item", name: checkedItems[ch].name, checked: true,
+                category: checkedItems[ch].category, categoryColor: "",
+                sourceIndex: checkedItems[ch].sourceIndex })
+        }
 
         saveShoppingList()
         updateAnyChecked()
@@ -142,21 +292,12 @@ Application {
 
     function uncheckAll() {
         for (var i = 0; i < shoppingModel.count; i++) shoppingModel.setProperty(i, "checked", false)
-            sortList()
+            buildFlatModel()
     }
 
     function checkAll() {
         for (var i = 0; i < shoppingModel.count; i++) shoppingModel.setProperty(i, "checked", true)
-            sortList()
-    }
-
-    function updateCurrentListCount() {
-        for (var i = 0; i < listsModel.count; i++) {
-            if (listsModel.get(i).name === appState.currentListName) {
-                listsModel.setProperty(i, "itemCount", shoppingModel.count)
-                return
-            }
-        }
+            buildFlatModel()
     }
 
     function updateAnyChecked() {
@@ -171,8 +312,18 @@ Application {
         updateCurrentListCount()
     }
 
+    function updateCurrentListCount() {
+        for (var i = 0; i < listsModel.count; i++) {
+            if (listsModel.get(i).name === appState.currentListName) {
+                listsModel.setProperty(i, "itemCount", shoppingModel.count)
+                return
+            }
+        }
+    }
+
     function switchToList(listName) {
         shoppingModel.clear()
+        flatModel.clear()
         appState.currentListName = listName
         lastListConfig.value = listName
         loadShoppingList()
@@ -226,28 +377,22 @@ Application {
                     if (appState.currentListName === oldName) appState.currentListName = trimmed
     }
 
+    // ----------------------------------------------------------------
+    // Navigation
+    // ----------------------------------------------------------------
     LayerStack {
         id: layerStack
+        anchors.fill: parent
         firstPage: shoppingListPageComponent
     }
 
-    Component {
-        id: shoppingListPageComponent
-        ShoppingListPage { }
-    }
-
-    Component {
-        id: allListsPageComponent
-        AllListsPage { }
-    }
-
-    Component {
-        id: editDialogComponent
-        EditDialog { }
-    }
+    Component { id: shoppingListPageComponent;  ShoppingListPage   { } }
+    Component { id: allListsPageComponent;       AllListsPage       { } }
+    Component { id: editDialogComponent;         EditDialog         { } }
+    Component { id: categoryEditDialogComponent; CategoryEditDialog { } }
 
     // ----------------------------------------------------------------
-    // Delete remorse timer — triggered from EditDialog
+    // Delete remorse timer — started from EditDialog
     // ----------------------------------------------------------------
     RemorseTimer {
         id: deleteRemorseTimer
@@ -267,42 +412,9 @@ Application {
                 deleteList(deleteTargetName)
             } else {
                 shoppingModel.remove(deleteItemIndex)
-                sortList()
+                buildFlatModel()
             }
-            layerStack.pop()
-        }
-    }
-
-    // ----------------------------------------------------------------
-    // Swipe remorse timer — triggered from ShoppingListPage and AllListsPage
-    // ----------------------------------------------------------------
-    RemorseTimer {
-        id: swipeRemorseTimer
-        duration: 3000
-        gaugeSegmentAmount: 6
-        gaugeStartDegree: -130
-        gaugeEndFromStartDegree: 265
-        //% "Tap to cancel"
-        cancelText: qsTrId("id-tap-to-cancel")
-        onTriggered: {
-            if (appState.swipeDeleteMode === "list") {
-                deleteList(appState.swipeDeleteName)
-                layerStack.push(allListsPageComponent)
-            } else {
-                shoppingModel.remove(appState.swipeDeleteIndex)
-                sortList()
-            }
-            appState.swipeDeleteIndex  = -1
-            appState.swipeDeleteName   = ""
-            appState.swipeDeleteSource = ""
-        }
-        onCancelled: {
-            if (appState.swipeDeleteSource === "lists") {
-                layerStack.push(allListsPageComponent)
-            }
-            appState.swipeDeleteIndex  = -1
-            appState.swipeDeleteName   = ""
-            appState.swipeDeleteSource = ""
+            root.deleteConfirmed()
         }
     }
 }
