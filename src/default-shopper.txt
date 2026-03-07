@@ -1,12 +1,24 @@
--Apples
--Banana
--Cereals
--Ductape
--Eggs
--Milk
--Razorblades
--Rinse Aid
--Tomatoes
--WD40
--Socks
--Nailfile
+-Produce:Bananas
+-Produce:Sasquatch Gourd
+-Produce:Tomatoes
+-Dairy:Fancy pants Yogurt
+-Dairy:Milk
+-Dairy:Mozarella
+-Meat & Fish:Chicken Breast
+-Meat & Fish:Salmon (Dead)
+-Bakery:Sourdough Bread
+-Bakery:Croissants (All Of Them)
+-Frozen:Pea bag
+-Frozen:SOS Pizza
+-Pantry:Olive Oil
+-Pantry:Mysterious Can
+-Drinks:Sparkling Water
+-Drinks:Coffee (Urgent)
+-Household:Dish Soap
+-Household:Duct Tape
+-Household:Rinse Aid
+-Household:WD-40
+-Snacks:Nuts
+-Snacks:Chips
+-Baby & Pet:Cat Food
+-Baby & Pet:Rubber Ducky
