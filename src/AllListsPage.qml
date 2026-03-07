@@ -115,7 +115,7 @@ Item {
                 onPressAndHold: {
                     layerStack.push(editDialogComponent, {
                         pop:        function() { layerStack.pop() },
-                                    editIndex:  isDefault ? -1 : model.index,
+                                    editIndex:  index,
                                     editText:   model.name,
                                     isListEdit: true
                     })
@@ -165,8 +165,8 @@ Item {
                 onClicked: {
                     layerStack.push(editDialogComponent, {
                         pop:        function() { layerStack.pop() },
-                                    editIndex:  -1,
-                                    editText:   "",
+                                    editIndex:  model.index,
+                                    editText:   model.name,
                                     isListEdit: true
                     })
                 }

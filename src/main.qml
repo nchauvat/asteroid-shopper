@@ -187,7 +187,7 @@ Application {
     // List management
     // ----------------------------------------------------------------
     function loadListsModel() {
-        defaultExists = FileHelper.exists("default")
+        defaultExists = FileHelper.exists("default") && countItems("default") > 0
         listsModel.clear()
         var arr = getUserLists()
         arr.forEach(function(n) { listsModel.append({ name: n, itemCount: countItems(n) }) })
@@ -250,8 +250,9 @@ Application {
             }
             if (items.length === 0) continue
                 items.sort(function(a, b) { return a.name.localeCompare(b.name) })
-                flatModel.append({ type: "categoryHeader", name: cat.name, checked: false,
-                    category: cat.name, categoryColor: cat.color, sourceIndex: -1 })
+                flatModel.append({ type: "categoryHeader", name: cat.name,
+                    sortNum: cat.sortOrder + 1, checked: false, category: cat.name,
+                    categoryColor: cat.color, sourceIndex: -1 })
                 for (var ai = 0; ai < items.length; ai++) {
                     flatModel.append({ type: "item", name: items[ai].name, checked: false,
                         category: cat.name, categoryColor: cat.color,

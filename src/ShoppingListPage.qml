@@ -103,7 +103,7 @@ Item {
                     left: parent.left
                     leftMargin: Dims.l(7)
                 }
-                text: model.name
+                text: "#" + model.sortNum + " " + model.name
                 font.pixelSize: 28
                 font.bold: true
                 color: "#ffffff"
