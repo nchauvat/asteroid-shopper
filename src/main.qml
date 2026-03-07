@@ -239,6 +239,11 @@ Application {
         var cats = getCategories()
         cats.sort(function(a, b) { return a.sortOrder - b.sortOrder })
 
+        // Build sortOrder lookup for checked section sorting
+        var catOrder = {}
+        for (var li = 0; li < cats.length; li++)
+            catOrder[cats[li].name] = li
+
         // — Category groups —
         for (var ci = 0; ci < cats.length; ci++) {
             var cat = cats[ci]
@@ -273,18 +278,24 @@ Application {
                 category: "", categoryColor: "", sourceIndex: uncatItems[uu].sourceIndex })
         }
 
-        // — Checked items flat at bottom —
+        // — Checked items: sorted by category sortOrder then alpha, dim color preserved —
         var checkedItems = []
         for (var chi = 0; chi < shoppingModel.count; chi++) {
             var chm = shoppingModel.get(chi)
             if (chm.checked)
-                checkedItems.push({ name: chm.name, category: chm.category, sourceIndex: chi })
+                checkedItems.push({ name: chm.name, category: chm.category,
+                    color: getCategoryColor(chm.category), sourceIndex: chi })
         }
-        checkedItems.sort(function(a, b) { return a.name.localeCompare(b.name) })
+        checkedItems.sort(function(a, b) {
+            var oa = (a.category !== "" && catOrder.hasOwnProperty(a.category)) ? catOrder[a.category] : 9999
+            var ob = (b.category !== "" && catOrder.hasOwnProperty(b.category)) ? catOrder[b.category] : 9999
+            if (oa !== ob) return oa - ob
+                return a.name.localeCompare(b.name)
+        })
         for (var ch = 0; ch < checkedItems.length; ch++) {
             flatModel.append({ type: "item", name: checkedItems[ch].name, checked: true,
-                category: checkedItems[ch].category, categoryColor: "",
-                sourceIndex: checkedItems[ch].sourceIndex })
+                category: checkedItems[ch].category, categoryColor: checkedItems[ch].color,
+                sortNum: 0, sourceIndex: checkedItems[ch].sourceIndex })
         }
 
         saveShoppingList()

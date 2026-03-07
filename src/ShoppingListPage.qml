@@ -92,7 +92,7 @@ Item {
                 anchors.fill: parent
                 visible: model.categoryColor !== ""
                 color: model.categoryColor !== "" ? model.categoryColor : "transparent"
-                opacity: model.type === "categoryHeader" ? 0.8 : (model.checked ? 0.2 : 0.45)
+                opacity: model.type === "categoryHeader" ? 0.8 : (model.checked ? 0.1 : 0.45)
             }
 
             // ---- Category header content ----
