@@ -25,6 +25,7 @@ Item {
     id: categoryEditDialog
     width: root.width
     height: root.height
+
     // ----------------------------------------------------------------
     // Properties injected at push time
     // ----------------------------------------------------------------
@@ -47,7 +48,6 @@ Item {
                 break
             }
         }
-        Qt.callLater(function() { nameField.forceActiveFocus() })
     }
 
     // ----------------------------------------------------------------
@@ -69,7 +69,7 @@ Item {
             topMargin: Dims.h(3)
             horizontalCenter: parent.horizontalCenter
         }
-        width: Dims.w(80)
+        width: Dims.l(80)
         text: categoryName
     }
 
@@ -102,7 +102,7 @@ Item {
             anchors {
                 verticalCenter: parent.verticalCenter
                 left: parent.left
-                leftMargin: Dims.w(5)
+                leftMargin: Dims.l(5)
             }
             onClicked: currentPosition--
         }
@@ -124,7 +124,7 @@ Item {
             anchors {
                 verticalCenter: parent.verticalCenter
                 right: parent.right
-                rightMargin: Dims.w(5)
+                rightMargin: Dims.l(5)
             }
             onClicked: currentPosition++
         }
@@ -137,7 +137,7 @@ Item {
         iconName: "ios-close-circle-outline"
         anchors {
             right: parent.horizontalCenter
-            rightMargin: Dims.w(2)
+            rightMargin: Dims.l(2)
             bottom: parent.bottom
             bottomMargin: Dims.iconButtonMargin
         }
@@ -151,7 +151,7 @@ Item {
         iconName: "ios-checkmark-circle-outline"
         anchors {
             left: parent.horizontalCenter
-            leftMargin: Dims.w(2)
+            leftMargin: Dims.l(2)
             bottom: parent.bottom
             bottomMargin: Dims.iconButtonMargin
         }
@@ -188,8 +188,8 @@ Item {
             if (oldName !== trimmedName)
                 renameCategoryInItems(oldName, trimmedName)
 
-            buildFlatModel()
-            pop()
+                buildFlatModel()
+                pop()
         }
     }
 

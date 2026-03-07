@@ -76,7 +76,7 @@ Item {
             id: nameField
             y: Math.round(contentFlick.height / 6 - height / 2)
             anchors.horizontalCenter: parent.horizontalCenter
-            width: Dims.w(80)
+            width: Dims.l(80)
             //% "Item name"
             previewText: qsTrId("id-item-name")
             text: editText
@@ -111,13 +111,13 @@ Item {
             id: buttonsRow
             y: Math.round(contentFlick.height * 5 / 6 - height / 2)
             anchors { left: parent.left; right: parent.right }
-            height: 80
+            height: Dims.l(18)
 
             IconButton {
                 iconName: "ios-close-circle-outline"
                 anchors {
                     right: parent.horizontalCenter
-                    rightMargin: Dims.w(2)
+                    rightMargin: Dims.l(2)
                     verticalCenter: parent.verticalCenter
                 }
                 onClicked: pop()
@@ -127,7 +127,7 @@ Item {
                 iconName: "ios-checkmark-circle-outline"
                 anchors {
                     left: parent.horizontalCenter
-                    leftMargin: Dims.w(2)
+                    leftMargin: Dims.l(2)
                     verticalCenter: parent.verticalCenter
                 }
                 onClicked: {
@@ -176,8 +176,8 @@ Item {
                 name: "ios-trash-outline"
                 color: "#FF3B30"
                 anchors.centerIn: parent
-                width: 96
-                height: 96
+                width: Dims.l(21)
+                height: Dims.l(21)
             }
 
             MouseArea {

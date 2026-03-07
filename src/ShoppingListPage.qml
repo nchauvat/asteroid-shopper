@@ -85,14 +85,14 @@ Item {
         delegate: Item {
             id: delegateRoot
             width: listView.width
-            height: model.type === "categoryHeader" ? 58 : 77
+            height: model.type === "categoryHeader" ? Dims.l(13) : Dims.l(17)
 
             // ---- Category colour band ----
             Rectangle {
                 anchors.fill: parent
                 visible: model.categoryColor !== ""
                 color: model.categoryColor !== "" ? model.categoryColor : "transparent"
-                opacity: model.type === "categoryHeader" ? 0.8 : (model.checked ? 0.1 : 0.45)
+                opacity: model.type === "categoryHeader" ? 0.7 : (model.checked ? 0.2 : 0.35)
             }
 
             // ---- Category header content ----
@@ -101,10 +101,10 @@ Item {
                 anchors {
                     verticalCenter: parent.verticalCenter
                     left: parent.left
-                    leftMargin: Dims.l(7)
+                    leftMargin: Dims.l(9)
                 }
                 text: "#" + model.sortNum + " " + model.name
-                font.pixelSize: 28
+                font.pixelSize: Dims.l(6)
                 font.bold: true
                 color: "#ffffff"
             }
@@ -122,20 +122,21 @@ Item {
 
                 Icon {
                     name: model.checked ? "ios-checkmark-circle-outline" : "ios-circle-outline"
-                    Layout.preferredWidth: 58
-                    Layout.preferredHeight: 58
-                    Layout.leftMargin: 72
+                    Layout.preferredWidth: Dims.l(11)
+                    Layout.preferredHeight: Dims.l(11)
+                    Layout.leftMargin: Dims.l(16)
                 }
 
                 Label {
                     text: model.name
-                    font.pixelSize: 34
+                    font.pixelSize: Dims.l(8)
                     font.strikeout: model.checked
-                    color: model.checked ? "#ACF39D" : "#ffffff"
+                    color: "#ffffff"
                     verticalAlignment: Text.AlignVCenter
                     horizontalAlignment: Text.AlignLeft
                     elide: Text.ElideRight
                     Layout.fillWidth: true
+                    Layout.leftMargin: Dims.l(2)
                     Layout.rightMargin: Dims.l(4)
                 }
             }
@@ -180,7 +181,7 @@ Item {
                     } else if (model.type === "categoryHeader") {
                         layerStack.push(categoryEditDialogComponent, {
                             pop:          function() { layerStack.pop() },
-                                        categoryName: model.name
+                                        categoryName: model.category
                         })
                     }
                 }
@@ -192,32 +193,39 @@ Item {
         // ----------------------------------------------------------------
         footer: Item {
             width: listView.width
-            height: 154
-            + (hasUserLists ? 100 : 0)
+            height: Dims.l(52)
+            + (hasUserLists ? Dims.l(26) : 0)
             + (hasUserLists ? Dims.l(10) : 0)
-            + (appState.currentListName === "default" ? 240 : 0)
+            + (appState.currentListName === "default" ? Dims.l(53) : 0)
 
             // ── Add Item row ─────────────────────────────────────────────
             Item {
                 id: addRow
                 anchors { top: parent.top; left: parent.left; right: parent.right }
-                height: 77
+                height: Dims.l(26)
 
-                Row {
-                    anchors.centerIn: parent
-                    spacing: Dims.l(3)
-                    Icon {
-                        name: "ios-add-circle-outline"
-                        width: 48; height: 48
+                Icon {
+                    id: addIcon
+                    name: "ios-add-circle-outline"
+                    width: Dims.l(11)
+                    height: Dims.l(11)
+                    anchors {
+                        horizontalCenter: parent.horizontalCenter
+                        top: parent.top
+                        topMargin: Dims.l(3)
                     }
-                    Label {
-                        height: 48
-                        verticalAlignment: Text.AlignVCenter
-                        //% "Add Item"
-                        text: qsTrId("id-add-item")
-                        font.pixelSize: 26
-                        color: "#80ffffff"
+                }
+                Label {
+                    anchors {
+                        horizontalCenter: parent.horizontalCenter
+                        top: addIcon.bottom
+                        topMargin: Dims.l(1)
                     }
+                    //% "Add Item"
+                    text: qsTrId("id-add-item")
+                    font.pixelSize: Dims.l(6)
+                    font.bold: true
+                    color: "#80ffffff"
                 }
 
                 MouseArea {
@@ -245,22 +253,29 @@ Item {
             Item {
                 id: checkRow
                 anchors { top: footerSep1.bottom; left: parent.left; right: parent.right }
-                height: 77
+                height: Dims.l(26)
 
-                Row {
-                    anchors.centerIn: parent
-                    spacing: Dims.l(3)
-                    Icon {
-                        name: appState.anyChecked ? "ios-refresh-circle-outline" : "ios-checkmark-circle-outline"
-                        width: 48; height: 48
+                Icon {
+                    id: checkAllIcon
+                    name: appState.anyChecked ? "ios-refresh-circle-outline" : "ios-checkmark-circle-outline"
+                    width: Dims.l(11)
+                    height: Dims.l(11)
+                    anchors {
+                        horizontalCenter: parent.horizontalCenter
+                        top: parent.top
+                        topMargin: Dims.l(3)
                     }
-                    Label {
-                        height: 48
-                        verticalAlignment: Text.AlignVCenter
-                        text: appState.anyChecked ? qsTrId("id-uncheck-all") : qsTrId("id-check-all")
-                        font.pixelSize: 26
-                        color: "#80ffffff"
+                }
+                Label {
+                    anchors {
+                        horizontalCenter: parent.horizontalCenter
+                        top: checkAllIcon.bottom
+                        topMargin: Dims.l(1)
                     }
+                    text: appState.anyChecked ? qsTrId("id-uncheck-all") : qsTrId("id-check-all")
+                    font.pixelSize: Dims.l(6)
+                    font.bold: true
+                    color: "#80ffffff"
                 }
 
                 MouseArea {
@@ -277,28 +292,35 @@ Item {
                 color: "#20ffffff"
             }
 
-            // ── All My Hauls row (taller for round-screen label safety) ───
+            // ── All My Hauls row ──────────────────────────────────────────
             Item {
                 id: allListsRow
                 visible: hasUserLists
                 anchors { top: footerSep2.bottom; left: parent.left; right: parent.right }
-                height: hasUserLists ? 100 : 0
+                height: hasUserLists ? Dims.l(26) : 0
 
-                Row {
-                    anchors.centerIn: parent
-                    spacing: Dims.l(3)
-                    Icon {
-                        name: "ios-list-box-outline"
-                        width: 48; height: 48
+                Icon {
+                    id: allListsIcon
+                    name: "ios-list-box-outline"
+                    width: Dims.l(11)
+                    height: Dims.l(11)
+                    anchors {
+                        horizontalCenter: parent.horizontalCenter
+                        top: parent.top
+                        topMargin: Dims.l(3)
                     }
-                    Label {
-                        height: 48
-                        verticalAlignment: Text.AlignVCenter
-                        //% "All My Hauls"
-                        text: qsTrId("id-show-all-lists")
-                        font.pixelSize: 26
-                        color: "#80ffffff"
+                }
+                Label {
+                    anchors {
+                        horizontalCenter: parent.horizontalCenter
+                        top: allListsIcon.bottom
+                        topMargin: Dims.l(1)
                     }
+                    //% "All My Hauls"
+                    text: qsTrId("id-show-all-lists")
+                    font.pixelSize: Dims.l(6)
+                    font.bold: true
+                    color: "#80ffffff"
                 }
 
                 MouseArea {
@@ -335,7 +357,7 @@ Item {
                 }
                 //% "This is the Starter Pack.\nLong-press any item or list to edit.\nSwipe left to delete.\nThe Starter Pack can be cleared but not deleted."
                 text: qsTrId("id-default-list-warning")
-                font.pixelSize: 26
+                font.pixelSize: Dims.l(6)
                 color: "#ffffff"
                 wrapMode: Text.WordWrap
                 horizontalAlignment: Text.AlignHCenter

@@ -29,7 +29,7 @@ Item {
     property var pop: function() {}
 
     // ----------------------------------------------------------------
-    // Right-edge swipe hint — navigate back
+    // Left-edge swipe hint — navigate back
     // ----------------------------------------------------------------
     Indicator {
         id: leftIndicator
@@ -55,15 +55,23 @@ Item {
         delegate: Item {
             id: listDelegateRoot
             width: listsView.width
-            height: 77
+            height: Dims.l(17)
 
             property bool isDefault: model.name === "default"
             property bool isCurrent: model.name === appState.currentListName
 
+            // Active list background
+            Rectangle {
+                anchors.fill: parent
+                color: "#119DA4"
+                opacity: 0.2
+                visible: isCurrent
+            }
+
             // Active list indicator bar
             Rectangle {
                 anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
-                width: 4
+                width: Dims.l(1)
                 color: "#119DA4"
                 visible: isCurrent
             }
@@ -73,14 +81,14 @@ Item {
                 anchors {
                     verticalCenter: parent.verticalCenter
                     left: parent.left
-                    leftMargin: Dims.l(12)
+                    leftMargin: Dims.l(14)
                     right: countLabel.left
                     rightMargin: Dims.l(3)
                 }
                 //% "Starter Pack"
                 text: isDefault ? qsTrId("id-default") : model.name
-                font.pixelSize: 34
-                color: isCurrent ? "#119DA4" : "#ffffff"
+                font.pixelSize: Dims.l(8)
+                color: "#ffffff"
                 elide: Text.ElideRight
             }
 
@@ -90,10 +98,10 @@ Item {
                 anchors {
                     verticalCenter: parent.verticalCenter
                     right: parent.right
-                    rightMargin: Dims.l(12)
+                    rightMargin: Dims.l(14)
                 }
                 text: model.itemCount
-                font.pixelSize: 26
+                font.pixelSize: Dims.l(6)
                 color: "#80ffffff"
             }
 
@@ -128,18 +136,18 @@ Item {
         // ----------------------------------------------------------------
         footer: Item {
             width: listsView.width
-            height: 77
+            height: Dims.l(26)
 
             Icon {
                 id: newListIcon
                 name: "ios-add-circle-outline"
+                width: Dims.l(11)
+                height: Dims.l(11)
                 anchors {
                     horizontalCenter: parent.horizontalCenter
                     top: parent.top
                     topMargin: Dims.l(3)
                 }
-                width: 58
-                height: 58
             }
 
             Label {
@@ -150,7 +158,8 @@ Item {
                 }
                 //% "Fresh Haul"
                 text: qsTrId("id-new-list")
-                font.pixelSize: 26
+                font.pixelSize: Dims.l(6)
+                font.bold: true
                 color: "#80ffffff"
             }
 
@@ -165,8 +174,8 @@ Item {
                 onClicked: {
                     layerStack.push(editDialogComponent, {
                         pop:        function() { layerStack.pop() },
-                                    editIndex:  model.index,
-                                    editText:   model.name,
+                                    editIndex:  -1,
+                                    editText:   "",
                                     isListEdit: true
                     })
                 }
