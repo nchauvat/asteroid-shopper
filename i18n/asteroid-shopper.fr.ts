@@ -7,133 +7,133 @@
         <location filename="../src/AllListsPage.qml" line="199"/>
         <source>My Hauls</source>
         <oldsource>My Lists</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Mes listes</translation>
     </message>
     <message id="id-default">
         <location filename="../src/AllListsPage.qml" line="89"/>
         <location filename="../src/ShoppingListPage.qml" line="424"/>
         <source>Starter Pack</source>
         <oldsource>Default</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Démarrage</translation>
     </message>
     <message id="id-new-list">
         <location filename="../src/AllListsPage.qml" line="170"/>
         <location filename="../src/EditDialog.qml" line="59"/>
         <source>Fresh Haul</source>
         <oldsource>New List</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Nouvelle liste</translation>
     </message>
     <message id="id-edit-list">
         <location filename="../src/EditDialog.qml" line="57"/>
         <source>Edit List</source>
         <oldsource>Edit ListEdit Item</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Modifier liste</translation>
     </message>
     <message id="id-edit-item">
         <location filename="../src/EditDialog.qml" line="62"/>
         <source>Edit Item</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifier élement</translation>
     </message>
     <message id="id-add-item">
         <location filename="../src/EditDialog.qml" line="64"/>
         <location filename="../src/ShoppingListPage.qml" line="277"/>
         <source>Add Item</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter élement</translation>
     </message>
     <message id="id-item-name">
         <location filename="../src/EditDialog.qml" line="89"/>
         <source>Item name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nom élément</translation>
     </message>
     <message id="id-category">
         <location filename="../src/EditDialog.qml" line="110"/>
         <source>Category</source>
-        <translation type="unfinished"></translation>
+        <translation>Catégorie</translation>
     </message>
     <message id="id-delete-list">
         <location filename="../src/EditDialog.qml" line="178"/>
         <location filename="../src/EditDialog.qml" line="201"/>
         <source>Delete List</source>
         <oldsource>Delete ListDelete Item</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Supprimer liste</translation>
     </message>
     <message id="id-delete-item">
         <location filename="../src/EditDialog.qml" line="180"/>
         <location filename="../src/EditDialog.qml" line="202"/>
         <source>Delete Item</source>
-        <translation type="unfinished"></translation>
+        <translation>Supprimer élément</translation>
     </message>
     <message id="id-cat-produce">
         <location filename="../src/main.qml" line="62"/>
         <source>Produce</source>
-        <translation type="unfinished"></translation>
+        <translation>Produits</translation>
     </message>
     <message id="id-cat-dairy">
         <location filename="../src/main.qml" line="64"/>
         <source>Dairy</source>
-        <translation type="unfinished"></translation>
+        <translation>Produits laitiers</translation>
     </message>
     <message id="id-cat-meat-fish">
         <location filename="../src/main.qml" line="66"/>
         <source>Meat &amp; Fish</source>
-        <translation type="unfinished"></translation>
+        <translation>Viande et poisson</translation>
     </message>
     <message id="id-cat-bakery">
         <location filename="../src/main.qml" line="68"/>
         <source>Bakery</source>
-        <translation type="unfinished"></translation>
+        <translation>Boulangerie</translation>
     </message>
     <message id="id-cat-frozen">
         <location filename="../src/main.qml" line="70"/>
         <source>Frozen</source>
-        <translation type="unfinished"></translation>
+        <translation>Surgelés</translation>
     </message>
     <message id="id-cat-pantry">
         <location filename="../src/main.qml" line="72"/>
         <source>Pantry</source>
-        <translation type="unfinished"></translation>
+        <translation>Conserves</translation>
     </message>
     <message id="id-cat-drinks">
         <location filename="../src/main.qml" line="74"/>
         <source>Drinks</source>
-        <translation type="unfinished"></translation>
+        <translation>Boissons</translation>
     </message>
     <message id="id-cat-household">
         <location filename="../src/main.qml" line="76"/>
         <source>Household</source>
-        <translation type="unfinished"></translation>
+        <translation>Ménage</translation>
     </message>
     <message id="id-cat-snacks">
         <location filename="../src/main.qml" line="78"/>
         <source>Snacks</source>
-        <translation type="unfinished"></translation>
+        <translation>Grignotage</translation>
     </message>
     <message id="id-cat-baby-pet">
         <location filename="../src/main.qml" line="80"/>
         <source>Baby &amp; Pet</source>
-        <translation type="unfinished"></translation>
+        <translation>Bébés et animaux</translation>
     </message>
     <message id="id-tap-to-cancel">
         <location filename="../src/main.qml" line="426"/>
         <source>Tap to cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Tapoter pour annuler</translation>
     </message>
     <message id="id-uncheck-all">
         <location filename="../src/ShoppingListPage.qml" line="327"/>
         <source>Uncheck All</source>
         <oldsource>Check AllUncheck All</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Tout décocher</translation>
     </message>
     <message id="id-check-all">
         <location filename="../src/ShoppingListPage.qml" line="329"/>
         <source>Check All</source>
-        <translation type="unfinished"></translation>
+        <translation>Tout cocher</translation>
     </message>
     <message id="id-show-all-lists">
         <location filename="../src/ShoppingListPage.qml" line="373"/>
         <source>All My Hauls</source>
         <oldsource>Show All Lists</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Toutes mes listes</translation>
     </message>
     <message id="id-default-list-warning">
         <location filename="../src/ShoppingListPage.qml" line="411"/>
@@ -142,17 +142,17 @@
 Long-press any item or list to edit.
 Swipe left to delete.
 The Starter Pack can be cleared but not deleted.</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Voici une liste de démonstration pour explorer l'application. Elle sera remise à zéro lors de la prochaine installation et peut être effacée une fois que vous aurez créé votre propre liste.</translation>
     </message>
     <message id="id-app-launcher-name">
         <location filename="asteroid-shopper.desktop.h" line="6"/>
         <source>Shopper</source>
-        <translation type="unfinished"></translation>
+        <translation>Emplettes</translation>
     </message>
     <message id="id-edit-category">
         <location filename="../src/CategoryEditDialog.qml" line="59"/>
         <source>Edit Category</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifier catégorie</translation>
     </message>
 </context>
 </TS>
