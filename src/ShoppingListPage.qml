@@ -27,29 +27,6 @@ Item {
     width: root.width
     height: root.height
 
-    property string anchorItemName: ""
-
-    // ----------------------------------------------------------------
-    // Delayed flat model rebuild — gives check animation time to play
-    // ----------------------------------------------------------------
-    Timer {
-        id: sortDelayTimer
-        interval: 500
-        repeat: false
-        onTriggered: {
-            buildFlatModel()
-            Qt.callLater(function() {
-                if (shoppingListPage.anchorItemName === "") return
-                    for (var i = 0; i < flatModel.count; i++) {
-                        if (flatModel.get(i).name === shoppingListPage.anchorItemName) {
-                            listView.positionViewAtIndex(i, ListView.Contain)
-                            return
-                        }
-                    }
-            })
-        }
-    }
-
     // ----------------------------------------------------------------
     // Restore scroll to top after list switch
     // ----------------------------------------------------------------
@@ -79,7 +56,6 @@ Item {
         model: flatModel
         clip: true
 
-        // Spacer so first item starts below PageHeader on initial load
         header: Item {
             width: listView.width
             height: listHeader.height
@@ -171,64 +147,18 @@ Item {
                         var wasChecked = model.checked
                         shoppingModel.setProperty(model.sourceIndex, "checked", !wasChecked)
                         flatModel.setProperty(index, "checked", !wasChecked)
-
-                        // Anchor to the neighbour the user should continue working on
-                        var anchor = ""
-                        if (!wasChecked) {
-                            // Just checked — find next unchecked neighbour to continue checking
-                            for (var f = index + 1; f < flatModel.count; f++) {
-                                var fn = flatModel.get(f)
-                                if (fn.type === "item" && !fn.checked) { anchor = fn.name; break }
-                            }
-                            if (anchor === "") {
-                                for (var b = index - 1; b >= 0; b--) {
-                                    var bn = flatModel.get(b)
-                                    if (bn.type === "item" && !bn.checked) { anchor = bn.name; break }
-                                }
-                            }
-                        } else {
-                            // Just unchecked — find next checked neighbour to stay in checked section
-                            for (var cf = index + 1; cf < flatModel.count; cf++) {
-                                var cfn = flatModel.get(cf)
-                                if (cfn.type === "item" && cfn.checked) { anchor = cfn.name; break }
-                            }
-                            if (anchor === "") {
-                                for (var cb = index - 1; cb >= 0; cb--) {
-                                    var cbn = flatModel.get(cb)
-                                    if (cbn.type === "item" && cbn.checked) { anchor = cbn.name; break }
-                                }
-                            }
-                        }
-                        // Fallback: anchor to topmost visible item
-                        if (anchor === "") {
-                            var ti = listView.indexAt(listView.width / 2,
-                                                      listView.contentY + listHeader.height + 1)
-                            if (ti >= 0 && ti < flatModel.count)
-                                anchor = flatModel.get(ti).name
-                        }
-                        shoppingListPage.anchorItemName = anchor
-                        sortDelayTimer.restart()
+                        saveShoppingList()
+                        updateAnyChecked()
                 }
 
                 onPressAndHold: {
                     if (model.type === "item") {
-                        var capturedSourceIndex = model.sourceIndex
                         layerStack.push(editDialogComponent, {
-                            pop: function() {
-                                layerStack.pop()
-                                Qt.callLater(function() {
-                                    for (var i = 0; i < flatModel.count; i++) {
-                                        if (flatModel.get(i).sourceIndex === capturedSourceIndex) {
-                                            listView.positionViewAtIndex(i, ListView.Contain)
-                                            return
-                                        }
-                                    }
-                                })
-                            },
-                            editIndex:    model.sourceIndex,
-                            editText:     model.name,
-                            editCategory: model.category,
-                            isListEdit:   false
+                            pop:          function() { layerStack.pop() },
+                                        editIndex:    model.sourceIndex,
+                                        editText:     model.name,
+                                        editCategory: model.category,
+                                        isListEdit:   false
                         })
                     } else if (model.type === "categoryHeader") {
                         layerStack.push(categoryEditDialogComponent, {
@@ -250,7 +180,7 @@ Item {
             + (hasUserLists ? Dims.l(10) : 0)
             + (appState.currentListName === "default" ? Dims.l(53) : 0)
 
-            // ── Add Item row ─────────────────────────────────────────────
+            // ── Add Item row ──────────────────────────────────────────
             Item {
                 id: addRow
                 anchors { top: parent.top; left: parent.left; right: parent.right }
@@ -300,7 +230,7 @@ Item {
                 color: "#20ffffff"
             }
 
-            // ── Check / Uncheck All row ───────────────────────────────────
+            // ── Check / Uncheck All row ───────────────────────────────
             Item {
                 id: checkRow
                 anchors { top: footerSep1.bottom; left: parent.left; right: parent.right }
@@ -345,7 +275,7 @@ Item {
                 color: "#20ffffff"
             }
 
-            // ── All My Hauls row ──────────────────────────────────────────
+            // ── All My Hauls row ──────────────────────────────────────
             Item {
                 id: allListsRow
                 visible: hasUserLists

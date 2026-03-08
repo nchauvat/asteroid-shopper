@@ -249,19 +249,14 @@ Application {
         var cats = getCategories()
         cats.sort(function(a, b) { return a.sortOrder - b.sortOrder })
 
-        // Build sortOrder lookup for checked section sorting
-        var catOrder = {}
-        for (var li = 0; li < cats.length; li++)
-            catOrder[cats[li].name] = li
-
-        // — Category groups —
+        // Category groups — always shown, items alphabetical, checked state in place
         for (var ci = 0; ci < cats.length; ci++) {
             var cat = cats[ci]
             var items = []
             for (var ii = 0; ii < shoppingModel.count; ii++) {
                 var sm = shoppingModel.get(ii)
-                if (!sm.checked && sm.category === cat.name)
-                    items.push({ name: sm.name, sourceIndex: ii })
+                if (sm.category === cat.name)
+                    items.push({ name: sm.name, checked: sm.checked, sourceIndex: ii })
             }
             if (items.length === 0) continue
                 items.sort(function(a, b) { return a.name.localeCompare(b.name) })
@@ -269,43 +264,23 @@ Application {
                     sortNum: cat.sortOrder + 1, checked: false, category: cat.name,
                     categoryColor: cat.color, sourceIndex: -1 })
                 for (var ai = 0; ai < items.length; ai++) {
-                    flatModel.append({ type: "item", name: items[ai].name, checked: false,
+                    flatModel.append({ type: "item", name: items[ai].name, checked: items[ai].checked,
                         category: cat.name, categoryColor: cat.color,
                         sourceIndex: items[ai].sourceIndex })
                 }
         }
 
-        // — Uncategorized unchecked items —
+        // Uncategorized items — alphabetical, checked state in place
         var uncatItems = []
         for (var ui = 0; ui < shoppingModel.count; ui++) {
             var um = shoppingModel.get(ui)
-            if (!um.checked && (!um.category || um.category === ""))
-                uncatItems.push({ name: um.name, sourceIndex: ui })
+            if (!um.category || um.category === "")
+                uncatItems.push({ name: um.name, checked: um.checked, sourceIndex: ui })
         }
         uncatItems.sort(function(a, b) { return a.name.localeCompare(b.name) })
         for (var uu = 0; uu < uncatItems.length; uu++) {
-            flatModel.append({ type: "item", name: uncatItems[uu].name, checked: false,
+            flatModel.append({ type: "item", name: uncatItems[uu].name, checked: uncatItems[uu].checked,
                 category: "", categoryColor: "", sourceIndex: uncatItems[uu].sourceIndex })
-        }
-
-        // — Checked items: sorted by category sortOrder then alpha, dim color preserved —
-        var checkedItems = []
-        for (var chi = 0; chi < shoppingModel.count; chi++) {
-            var chm = shoppingModel.get(chi)
-            if (chm.checked)
-                checkedItems.push({ name: chm.name, category: chm.category,
-                    color: getCategoryColor(chm.category), sourceIndex: chi })
-        }
-        checkedItems.sort(function(a, b) {
-            var oa = (a.category !== "" && catOrder.hasOwnProperty(a.category)) ? catOrder[a.category] : 9999
-            var ob = (b.category !== "" && catOrder.hasOwnProperty(b.category)) ? catOrder[b.category] : 9999
-            if (oa !== ob) return oa - ob
-                return a.name.localeCompare(b.name)
-        })
-        for (var ch = 0; ch < checkedItems.length; ch++) {
-            flatModel.append({ type: "item", name: checkedItems[ch].name, checked: true,
-                category: checkedItems[ch].category, categoryColor: checkedItems[ch].color,
-                sortNum: 0, sourceIndex: checkedItems[ch].sourceIndex })
         }
 
         saveShoppingList()
@@ -408,6 +383,7 @@ Application {
             shoppingModel.remove(sourceIndex)
             buildFlatModel()
             loadListsModel()
+            root.listLoaded()
     }
 
     // ----------------------------------------------------------------
