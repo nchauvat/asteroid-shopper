@@ -11,55 +11,76 @@
     </message>
     <message id="id-default">
         <location filename="../src/AllListsPage.qml" line="89"/>
-        <location filename="../src/ShoppingListPage.qml" line="424"/>
+        <location filename="../src/ShoppingListPage.qml" line="354"/>
         <source>Starter Pack</source>
         <oldsource>Default</oldsource>
         <translation>Démarrage</translation>
     </message>
     <message id="id-new-list">
         <location filename="../src/AllListsPage.qml" line="170"/>
-        <location filename="../src/EditDialog.qml" line="59"/>
+        <location filename="../src/EditDialog.qml" line="90"/>
         <source>Fresh Haul</source>
         <oldsource>New List</oldsource>
         <translation>Nouvelle liste</translation>
     </message>
     <message id="id-edit-list">
-        <location filename="../src/EditDialog.qml" line="57"/>
+        <location filename="../src/EditDialog.qml" line="88"/>
         <source>Edit List</source>
         <oldsource>Edit ListEdit Item</oldsource>
         <translation>Modifier liste</translation>
     </message>
     <message id="id-edit-item">
-        <location filename="../src/EditDialog.qml" line="62"/>
+        <location filename="../src/EditDialog.qml" line="92"/>
         <source>Edit Item</source>
         <translation>Modifier élement</translation>
     </message>
     <message id="id-add-item">
-        <location filename="../src/EditDialog.qml" line="64"/>
-        <location filename="../src/ShoppingListPage.qml" line="277"/>
+        <location filename="../src/EditDialog.qml" line="94"/>
+        <location filename="../src/ShoppingListPage.qml" line="207"/>
         <source>Add Item</source>
         <translation>Ajouter élement</translation>
     </message>
+    <message id="id-move-to-haul">
+        <location filename="../src/EditDialog.qml" line="99"/>
+        <source>Move to Haul</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="id-list-name">
+        <location filename="../src/EditDialog.qml" line="145"/>
+        <source>List name</source>
+        <oldsource>Item nameList name</oldsource>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="id-item-name">
-        <location filename="../src/EditDialog.qml" line="89"/>
+        <location filename="../src/EditDialog.qml" line="147"/>
         <source>Item name</source>
         <translation>Nom élément</translation>
     </message>
+    <message id="id-tap-to-change-category">
+        <location filename="../src/EditDialog.qml" line="178"/>
+        <source>Tap to change category</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="id-tap-to-select-target">
+        <location filename="../src/EditDialog.qml" line="199"/>
+        <source>Tap to select target</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="id-category">
-        <location filename="../src/EditDialog.qml" line="110"/>
+        <location filename="../src/EditDialog.qml" line="97"/>
         <source>Category</source>
         <translation>Catégorie</translation>
     </message>
     <message id="id-delete-list">
-        <location filename="../src/EditDialog.qml" line="178"/>
-        <location filename="../src/EditDialog.qml" line="201"/>
+        <location filename="../src/EditDialog.qml" line="101"/>
+        <location filename="../src/EditDialog.qml" line="230"/>
         <source>Delete List</source>
         <oldsource>Delete ListDelete Item</oldsource>
         <translation>Supprimer liste</translation>
     </message>
     <message id="id-delete-item">
-        <location filename="../src/EditDialog.qml" line="180"/>
-        <location filename="../src/EditDialog.qml" line="202"/>
+        <location filename="../src/EditDialog.qml" line="103"/>
+        <location filename="../src/EditDialog.qml" line="231"/>
         <source>Delete Item</source>
         <translation>Supprimer élément</translation>
     </message>
@@ -114,29 +135,30 @@
         <translation>Bébés et animaux</translation>
     </message>
     <message id="id-tap-to-cancel">
-        <location filename="../src/main.qml" line="426"/>
+        <location filename="../src/main.qml" line="413"/>
         <source>Tap to cancel</source>
         <translation>Tapoter pour annuler</translation>
     </message>
     <message id="id-uncheck-all">
-        <location filename="../src/ShoppingListPage.qml" line="327"/>
-        <source>Uncheck All</source>
-        <oldsource>Check AllUncheck All</oldsource>
-        <translation>Tout décocher</translation>
+        <location filename="../src/ShoppingListPage.qml" line="257"/>
+        <source>Uncheck All Items</source>
+        <oldsource>Uncheck All</oldsource>
+        <translation type="unfinished"></translation>
     </message>
     <message id="id-check-all">
-        <location filename="../src/ShoppingListPage.qml" line="329"/>
-        <source>Check All</source>
-        <translation>Tout cocher</translation>
+        <location filename="../src/ShoppingListPage.qml" line="259"/>
+        <source>Check All Items</source>
+        <oldsource>Check All</oldsource>
+        <translation type="unfinished"></translation>
     </message>
     <message id="id-show-all-lists">
-        <location filename="../src/ShoppingListPage.qml" line="373"/>
+        <location filename="../src/ShoppingListPage.qml" line="303"/>
         <source>All My Hauls</source>
         <oldsource>Show All Lists</oldsource>
         <translation>Toutes mes listes</translation>
     </message>
     <message id="id-default-list-warning">
-        <location filename="../src/ShoppingListPage.qml" line="411"/>
+        <location filename="../src/ShoppingListPage.qml" line="341"/>
         <source>This is a demo list meant for exploring the app. It will be reset on reinstall and should be deleted once you have created your own list.</source>
         <oldsource>This is the Starter Pack.
 Long-press any item or list to edit.

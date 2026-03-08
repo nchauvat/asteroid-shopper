@@ -65,11 +65,11 @@ Item {
     TextField {
         id: nameField
         anchors {
-            top: dialogHeader.bottom
-            topMargin: Dims.h(3)
+            bottom: parent.verticalCenter
+            bottomMargin: Dims.l(6)
             horizontalCenter: parent.horizontalCenter
         }
-        width: Dims.l(80)
+        width: Dims.l(74)
         text: categoryName
     }
 
@@ -79,8 +79,8 @@ Item {
     Item {
         id: positionRow
         anchors {
-            top: nameField.bottom
-            topMargin: Dims.h(4)
+            top: parent.verticalCenter
+            topMargin: Dims.l(6)
             left: parent.left
             right: parent.right
         }
@@ -101,14 +101,17 @@ Item {
             opacity: enabled ? 1.0 : 0.3
             anchors {
                 verticalCenter: parent.verticalCenter
-                left: parent.left
-                leftMargin: Dims.l(5)
+                right: positionLabel.left
+                rightMargin: Dims.l(8)
             }
+            width: Dims.l(11)
+            height: Dims.l(11)
             onClicked: currentPosition--
         }
 
         // Position label
         Label {
+            id: positionLabel
             anchors.centerIn: parent
             text: currentPosition + " / " + totalPositions
             font.pixelSize: Dims.l(8)
@@ -123,9 +126,11 @@ Item {
             opacity: enabled ? 1.0 : 0.3
             anchors {
                 verticalCenter: parent.verticalCenter
-                right: parent.right
-                rightMargin: Dims.l(5)
+                left: positionLabel.right
+                leftMargin: Dims.l(8)
             }
+            width: Dims.l(11)
+            height: Dims.l(11)
             onClicked: currentPosition++
         }
     }
@@ -137,9 +142,9 @@ Item {
         iconName: "ios-close-circle-outline"
         anchors {
             right: parent.horizontalCenter
-            rightMargin: Dims.l(2)
+            rightMargin: Dims.l(4)
             bottom: parent.bottom
-            bottomMargin: Dims.iconButtonMargin
+            bottomMargin: Dims.l(4)
         }
         onClicked: pop()
     }
@@ -151,9 +156,9 @@ Item {
         iconName: "ios-checkmark-circle-outline"
         anchors {
             left: parent.horizontalCenter
-            leftMargin: Dims.l(2)
+            leftMargin: Dims.l(4)
             bottom: parent.bottom
-            bottomMargin: Dims.iconButtonMargin
+            bottomMargin: Dims.l(4)
         }
         onClicked: {
             var trimmedName = nameField.text.trim()
