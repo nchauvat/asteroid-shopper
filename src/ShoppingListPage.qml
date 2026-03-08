@@ -253,9 +253,9 @@ Item {
                         top: checkAllIcon.bottom
                         topMargin: Dims.l(1)
                     }
-                    //% "Uncheck All"
+                    //% "Uncheck All Items"
                     text: appState.anyChecked ? qsTrId("id-uncheck-all")
-                    //% "Check All"
+                    //% "Check All Items"
                     : qsTrId("id-check-all")
                     font.pixelSize: Dims.l(6)
                     font.bold: true

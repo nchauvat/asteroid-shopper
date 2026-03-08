@@ -140,10 +140,10 @@ Item {
                     horizontalCenter: parent.horizontalCenter
                 }
                 width: Dims.l(74)
-                //% "Item name"
                 previewText: isListEdit
                 //% "List name"
                 ? qsTrId("id-list-name")
+                //% "Item name"
                 : qsTrId("id-item-name")
                 text: editDialog.draftName
                 onTextChanged: editDialog.draftName = text
