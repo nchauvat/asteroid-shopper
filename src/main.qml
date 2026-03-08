@@ -399,6 +399,17 @@ Application {
                     if (appState.currentListName === oldName) appState.currentListName = trimmed
     }
 
+    function moveItemToList(sourceIndex, targetListName, itemName, itemCategory) {
+        var line = "-"
+        if (itemCategory && itemCategory !== "") line += itemCategory + ":"
+            line += itemName
+            var existing = FileHelper.readFile(targetListName)
+            FileHelper.writeFile(targetListName, existing + line + "\n")
+            shoppingModel.remove(sourceIndex)
+            buildFlatModel()
+            loadListsModel()
+    }
+
     // ----------------------------------------------------------------
     // Navigation
     // ----------------------------------------------------------------
