@@ -27,7 +27,7 @@ Item {
     width: root.width
     height: root.height
 
-    property real savedContentY: 0
+    property string anchorItemName: ""
 
     // ----------------------------------------------------------------
     // Delayed flat model rebuild — gives check animation time to play
@@ -39,10 +39,13 @@ Item {
         onTriggered: {
             buildFlatModel()
             Qt.callLater(function() {
-                Qt.callLater(function() {
-                    listView.contentY = Math.min(shoppingListPage.savedContentY,
-                                                 Math.max(0, listView.contentHeight - listView.height))
-                })
+                if (shoppingListPage.anchorItemName === "") return
+                    for (var i = 0; i < flatModel.count; i++) {
+                        if (flatModel.get(i).name === shoppingListPage.anchorItemName) {
+                            listView.positionViewAtIndex(i, ListView.Contain)
+                            return
+                        }
+                    }
             })
         }
     }
@@ -154,23 +157,62 @@ Item {
                 anchors.fill: parent
 
                 onClicked: {
-                    if (model.type === "item") {
-                        shoppingListPage.savedContentY = listView.contentY
-                        var newChecked = !model.checked
-                        shoppingModel.setProperty(model.sourceIndex, "checked", newChecked)
-                        flatModel.setProperty(index, "checked", newChecked)
+                    if (model.type !== "item") return
+                        var wasChecked = model.checked
+                        shoppingModel.setProperty(model.sourceIndex, "checked", !wasChecked)
+                        flatModel.setProperty(index, "checked", !wasChecked)
+
+                        // Anchor to the neighbour the user should continue working on
+                        var anchor = ""
+                        if (!wasChecked) {
+                            // Just checked — find next unchecked neighbour to continue checking
+                            for (var f = index + 1; f < flatModel.count; f++) {
+                                var fn = flatModel.get(f)
+                                if (fn.type === "item" && !fn.checked) { anchor = fn.name; break }
+                            }
+                            if (anchor === "") {
+                                for (var b = index - 1; b >= 0; b--) {
+                                    var bn = flatModel.get(b)
+                                    if (bn.type === "item" && !bn.checked) { anchor = bn.name; break }
+                                }
+                            }
+                        } else {
+                            // Just unchecked — find next checked neighbour to stay in checked section
+                            for (var cf = index + 1; cf < flatModel.count; cf++) {
+                                var cfn = flatModel.get(cf)
+                                if (cfn.type === "item" && cfn.checked) { anchor = cfn.name; break }
+                            }
+                            if (anchor === "") {
+                                for (var cb = index - 1; cb >= 0; cb--) {
+                                    var cbn = flatModel.get(cb)
+                                    if (cbn.type === "item" && cbn.checked) { anchor = cbn.name; break }
+                                }
+                            }
+                        }
+                        // Fallback: anchor to topmost visible item
+                        if (anchor === "") {
+                            var ti = listView.indexAt(listView.width / 2,
+                            listView.contentY + listHeader.height + 1)
+                            if (ti >= 0 && ti < flatModel.count)
+                                anchor = flatModel.get(ti).name
+                        }
+                        shoppingListPage.anchorItemName = anchor
                         sortDelayTimer.restart()
-                    }
                 }
 
                 onPressAndHold: {
                     if (model.type === "item") {
-                        shoppingListPage.savedContentY = listView.contentY
+                        var capturedSourceIndex = model.sourceIndex
                         layerStack.push(editDialogComponent, {
-                            pop:          function() {
+                            pop: function() {
                                 layerStack.pop()
                                 Qt.callLater(function() {
-                                    listView.contentY = shoppingListPage.savedContentY
+                                    for (var i = 0; i < flatModel.count; i++) {
+                                        if (flatModel.get(i).sourceIndex === capturedSourceIndex) {
+                                            listView.positionViewAtIndex(i, ListView.Contain)
+                                            return
+                                        }
+                                    }
                                 })
                             },
                             editIndex:    model.sourceIndex,
