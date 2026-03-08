@@ -52,6 +52,8 @@ Item {
     PageHeader {
         id: dialogHeader
         text: {
+            //% "Edit List"
+            //% "Edit Item"
             if (isListEdit) return editIndex >= 0 ? qsTrId("id-edit-list") : qsTrId("id-new-list")
                 return editIndex >= 0 ? qsTrId("id-edit-item") : qsTrId("id-add-item")
         }
@@ -166,6 +168,8 @@ Item {
                     verticalCenter: parent.verticalCenter
                     verticalCenterOffset: -(trashIcon.height / 2 + Dims.l(5))
                 }
+                //% "Delete List"
+                //% "Delete Item"
                 text: isListEdit ? qsTrId("id-delete-list") : qsTrId("id-delete-item")
                 font.pixelSize: Dims.l(6)
                 color: "#80ffffff"

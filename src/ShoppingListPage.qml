@@ -152,8 +152,18 @@ Item {
                 color: "#20ffffff"
             }
 
+            // ---- Press highlight ----
+            Rectangle {
+                anchors.fill: parent
+                color: delegateMouseArea.containsPress ? "#33ffffff" : "transparent"
+                Behavior on color {
+                    ColorAnimation { duration: 150; easing.type: Easing.OutQuad }
+                }
+            }
+
             // ---- Interaction ----
             MouseArea {
+                id: delegateMouseArea
                 anchors.fill: parent
 
                 onClicked: {
@@ -192,7 +202,7 @@ Item {
                         // Fallback: anchor to topmost visible item
                         if (anchor === "") {
                             var ti = listView.indexAt(listView.width / 2,
-                            listView.contentY + listHeader.height + 1)
+                                                      listView.contentY + listHeader.height + 1)
                             if (ti >= 0 && ti < flatModel.count)
                                 anchor = flatModel.get(ti).name
                         }
@@ -270,8 +280,7 @@ Item {
                     color: "#80ffffff"
                 }
 
-                MouseArea {
-                    anchors.fill: parent
+                HighlightBar {
                     onClicked: {
                         layerStack.push(editDialogComponent, {
                             pop:          function() { layerStack.pop() },
@@ -314,14 +323,15 @@ Item {
                         top: checkAllIcon.bottom
                         topMargin: Dims.l(1)
                     }
+                    //% "Check All"
+                    //% "Uncheck All"
                     text: appState.anyChecked ? qsTrId("id-uncheck-all") : qsTrId("id-check-all")
                     font.pixelSize: Dims.l(6)
                     font.bold: true
                     color: "#80ffffff"
                 }
 
-                MouseArea {
-                    anchors.fill: parent
+                HighlightBar {
                     onClicked: appState.anyChecked ? uncheckAll() : checkAll()
                 }
             }
@@ -365,8 +375,7 @@ Item {
                     color: "#80ffffff"
                 }
 
-                MouseArea {
-                    anchors.fill: parent
+                HighlightBar {
                     onClicked: layerStack.push(allListsPageComponent, {
                         pop: function() { layerStack.pop() }
                     })

@@ -112,7 +112,17 @@ Item {
                 color: "#20ffffff"
             }
 
+            // Press highlight
+            Rectangle {
+                anchors.fill: parent
+                color: listMouseArea.containsPress ? "#33ffffff" : "transparent"
+                Behavior on color {
+                    ColorAnimation { duration: 150; easing.type: Easing.OutQuad }
+                }
+            }
+
             MouseArea {
+                id: listMouseArea
                 anchors.fill: parent
 
                 onClicked: {
@@ -169,8 +179,7 @@ Item {
                 color: "#20ffffff"
             }
 
-            MouseArea {
-                anchors.fill: parent
+            HighlightBar {
                 onClicked: {
                     layerStack.push(editDialogComponent, {
                         pop:        function() { layerStack.pop() },
