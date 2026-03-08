@@ -323,9 +323,10 @@ Item {
                         top: checkAllIcon.bottom
                         topMargin: Dims.l(1)
                     }
-                    //% "Check All"
                     //% "Uncheck All"
-                    text: appState.anyChecked ? qsTrId("id-uncheck-all") : qsTrId("id-check-all")
+                    text: appState.anyChecked ? qsTrId("id-uncheck-all")
+                    //% "Check All"
+                    : qsTrId("id-check-all")
                     font.pixelSize: Dims.l(6)
                     font.bold: true
                     color: "#80ffffff"
@@ -406,7 +407,7 @@ Item {
                     leftMargin: Dims.l(8)
                     rightMargin: Dims.l(8)
                 }
-                //% "This is the Starter Pack.\nLong-press any item or list to edit.\nSwipe left to delete.\nThe Starter Pack can be cleared but not deleted."
+                //% "This is a demo list meant for exploring the app. It will be reset on reinstall and should be deleted once you have created your own list."
                 text: qsTrId("id-default-list-warning")
                 font.pixelSize: Dims.l(6)
                 color: "#ffffff"

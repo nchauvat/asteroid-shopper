@@ -58,16 +58,26 @@ Application {
     }
 
     readonly property var defaultCategories: [
-        { name: "Produce",     color: "#7BC67E", sortOrder: 0 },
-        { name: "Dairy",       color: "#F5E642", sortOrder: 1 },
-        { name: "Meat & Fish", color: "#E07A5F", sortOrder: 2 },
-        { name: "Bakery",      color: "#C4A35A", sortOrder: 3 },
-        { name: "Frozen",      color: "#8ECAE6", sortOrder: 4 },
-        { name: "Pantry",      color: "#B0B0B0", sortOrder: 5 },
-        { name: "Drinks",      color: "#6A9EC4", sortOrder: 6 },
-        { name: "Household",   color: "#9B72CF", sortOrder: 7 },
-        { name: "Snacks",      color: "#E8A838", sortOrder: 8 },
-        { name: "Baby & Pet",  color: "#F4A8C0", sortOrder: 9 }
+        //% "Produce"
+        { name: qsTrId("id-cat-produce"),    color: "#7BC67E", sortOrder: 0 },
+        //% "Dairy"
+        { name: qsTrId("id-cat-dairy"),      color: "#F5E642", sortOrder: 1 },
+        //% "Meat & Fish"
+        { name: qsTrId("id-cat-meat-fish"),  color: "#E07A5F", sortOrder: 2 },
+        //% "Bakery"
+        { name: qsTrId("id-cat-bakery"),     color: "#C4A35A", sortOrder: 3 },
+        //% "Frozen"
+        { name: qsTrId("id-cat-frozen"),     color: "#8ECAE6", sortOrder: 4 },
+        //% "Pantry"
+        { name: qsTrId("id-cat-pantry"),     color: "#B0B0B0", sortOrder: 5 },
+        //% "Drinks"
+        { name: qsTrId("id-cat-drinks"),     color: "#6A9EC4", sortOrder: 6 },
+        //% "Household"
+        { name: qsTrId("id-cat-household"),  color: "#9B72CF", sortOrder: 7 },
+        //% "Snacks"
+        { name: qsTrId("id-cat-snacks"),     color: "#E8A838", sortOrder: 8 },
+        //% "Baby & Pet"
+        { name: qsTrId("id-cat-baby-pet"),   color: "#F4A8C0", sortOrder: 9 }
     ]
 
     property bool defaultExists: false

@@ -52,10 +52,16 @@ Item {
     PageHeader {
         id: dialogHeader
         text: {
-            //% "Edit List"
+            if (isListEdit) {
+                //% "Edit List"
+                return editIndex >= 0 ? qsTrId("id-edit-list")
+                //% "Fresh Haul"
+                : qsTrId("id-new-list")
+            }
             //% "Edit Item"
-            if (isListEdit) return editIndex >= 0 ? qsTrId("id-edit-list") : qsTrId("id-new-list")
-                return editIndex >= 0 ? qsTrId("id-edit-item") : qsTrId("id-add-item")
+            return editIndex >= 0 ? qsTrId("id-edit-item")
+            //% "Add Item"
+            : qsTrId("id-add-item")
         }
     }
 
@@ -169,8 +175,9 @@ Item {
                     verticalCenterOffset: -(trashIcon.height / 2 + Dims.l(5))
                 }
                 //% "Delete List"
+                text: isListEdit ? qsTrId("id-delete-list")
                 //% "Delete Item"
-                text: isListEdit ? qsTrId("id-delete-list") : qsTrId("id-delete-item")
+                : qsTrId("id-delete-item")
                 font.pixelSize: Dims.l(6)
                 color: "#80ffffff"
             }
